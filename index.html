@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CyberPuls - Blitz Tracker</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #03050c;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 10%, rgba(0, 242, 254, 0.15) 0%, transparent 60%),
+                        radial-gradient(circle at 90% 90%, rgba(79, 70, 229, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 10% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 45%);
+            z-index: -1;
+        }
+
+        .header {
+            padding: 14px 20px 6px 20px;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        .user-card {
+            background: linear-gradient(135deg, rgba(15, 23, 48, 0.9) 0%, rgba(6, 10, 22, 0.95) 100%);
+            border: 1.5px solid rgba(0, 242, 254, 0.4);
+            border-radius: 20px;
+            padding: 10px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.7),
+                0 0 25px rgba(0, 242, 254, 0.15),
+                inset 0 1px 2px rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(12px);
+        }
+
+        .username {
+            font-weight: 800;
+            font-size: 15px;
+            letter-spacing: 1.2px;
+            color: #f8fafc;
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+        }
+
+        .balance-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.2) 0%, rgba(79, 70, 229, 0.2) 100%);
+            border: 1px solid rgba(0, 242, 254, 0.5);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+            color: #00f2fe;
+            box-shadow: inset 0 1px 4px rgba(0, 242, 254, 0.4), 0 4px 10px rgba(0,0,0,0.4);
+        }
+
+        .profile-icon {
+            width: 34px;
+            height: 34px;
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.25), rgba(79, 70, 229, 0.35));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #00f2fe;
+            border: 1px solid rgba(0, 242, 254, 0.5);
+            box-shadow: 0 0 12px rgba(0, 242, 254, 0.3);
+        }
+
+        .info-strip {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 0 24px;
+            font-size: 12px;
+            color: #94a3b8;
+            flex-shrink: 0;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .info-value {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            max-width: 400px;
+            margin: 6px auto 0 auto;
+            padding: 0 24px;
+            flex-shrink: 0;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 6px;
+            background: rgba(10, 15, 30, 0.9);
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.9);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00f2fe, #4f46e5);
+            width: 5%;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 12px rgba(0, 242, 254, 0.9);
+        }
+
+        /* Контейнеры экранов */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .view-section {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex: 1;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .view-section.active {
+            display: flex;
+        }
+
+        /* 3D ГОЛОГРАФИЧЕСКИЕ КАРТОЧКИ */
+        .cyber-card-3d {
+            background: linear-gradient(135deg, rgba(16, 26, 56, 0.85) 0%, rgba(6, 11, 26, 0.95) 100%);
+            border: 2px solid rgba(0, 242, 254, 0.5);
+            border-radius: 30px;
+            padding: 34px 26px;
+            max-width: 340px;
+            width: 100%;
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.85),
+                0 0 40px rgba(0, 242, 254, 0.2),
+                inset 0 2px 6px rgba(255, 255, 255, 0.35),
+                inset 0 -5px 15px rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(25px);
+            animation: floatCard3D 5s ease-in-out infinite;
+            position: relative;
+        }
+
+        .cyber-card-3d::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 20%; right: 20%; height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(0, 242, 254, 1), transparent);
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00f2fe;
+        }
+
+        @keyframes floatCard3D {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-10px) rotate(0.5deg);
+            }
+        }
+
+        .card-icon-container-3d {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px auto;
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.25) 0%, rgba(79, 70, 229, 0.35) 100%);
+            border: 2px solid rgba(0, 242, 254, 0.6);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 38px;
+            box-shadow: 
+                0 12px 30px rgba(0, 242, 254, 0.4),
+                inset 0 4px 8px rgba(255, 255, 255, 0.5),
+                inset 0 -4px 8px rgba(0, 0, 0, 0.9);
+            filter: drop-shadow(0 0 10px rgba(0, 242, 254, 0.6));
+        }
+
+        .card-title-3d {
+            font-size: 20px;
+            font-weight: 800;
+            color: #00f2fe;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+            text-shadow: 0 0 15px rgba(0, 242, 254, 0.6);
+        }
+
+        .card-desc-3d {
+            font-size: 14px;
+            color: #94a3b8;
+            line-height: 1.6;
+            font-weight: 400;
+        }
+
+        /* Элементы колеса */
+        .reward-info {
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .reward-title {
+            color: #00f2fe;
+            font-weight: 700;
+            font-size: 15px;
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.4);
+            margin-bottom: 2px;
+        }
+
+        .reward-timer {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 270px;
+            height: 270px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+
+        .wheel-pointer {
+            position: absolute;
+            top: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 14px solid #00f2fe;
+            z-index: 10;
+            filter: drop-shadow(0 0 8px #00f2fe);
+        }
+
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 3px solid rgba(0, 242, 254, 0.5);
+            position: relative;
+            box-shadow: 0 0 35px rgba(0, 242, 254, 0.2), inset 0 0 35px rgba(0, 242, 254, 0.2);
+            background: radial-gradient(circle, rgba(16, 24, 48, 0.9) 0%, rgba(5, 8, 20, 0.98) 100%);
+            transition: transform 4s cubic-bezier(0.15, 0.85, 0.15, 1);
+        }
+
+        .wheel-sector {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            font-weight: 700;
+            font-size: 15px;
+            color: #00f2fe;
+            padding-top: 18px;
+        }
+
+        .s1 { transform: rotate(0deg); }
+        .s2 { transform: rotate(90deg); }
+        .s3 { transform: rotate(180deg); }
+        .s4 { transform: rotate(270deg); }
+
+        .spin-hint {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #64748b;
+            letter-spacing: 0.5px;
+            animation: pulse-text 2s infinite;
+        }
+
+        @keyframes pulse-text {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .spin-btn {
+            position: absolute;
+            width: 86px;
+            height: 86px;
+            background: linear-gradient(135deg, #00f2fe 0%, #4f46e5 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 16px;
+            color: #fff;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border: 3px solid #03050c;
+            box-shadow: 0 0 25px rgba(0, 242, 254, 0.6);
+            transition: transform 0.1s ease, filter 0.2s ease;
+            z-index: 5;
+        }
+
+        .spin-btn:active {
+            transform: scale(0.95);
+        }
+
+        .spin-btn:disabled {
+            background: #1e293b;
+            color: #64748b;
+            border-color: #334155;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .win-notification {
+            font-weight: 700;
+            font-size: 18px;
+            color: #00f2fe;
+            text-shadow: 0 0 15px rgba(0, 242, 254, 0.8);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.4s ease;
+            height: 25px;
+            margin-bottom: 5px;
+        }
+
+        .win-notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* КРУГЛЫЕ И ПАРЯЩИЕ ЭЛЕМЕНТЫ РАЗДЕЛОВ */
+        .nav-container-wrapper {
+            padding: 10px 16px 20px 16px;
+            display: flex;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 100%;
+            background: transparent;
+        }
+
+        .nav-bar {
+            background: transparent;
+            border: none;
+            padding: 0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 100%;
+            max-width: 400px;
+            gap: 12px;
+            box-shadow: none;
+            backdrop-filter: none;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(16, 26, 56, 0.8) 0%, rgba(6, 10, 24, 0.9) 100%);
+            border: 2px solid rgba(0, 242, 254, 0.3);
+            color: #64748b;
+            font-size: 9px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            position: relative;
+            animation: floatNav 3.5s ease-in-out infinite;
+        }
+
+        /* Разная задержка для органичного эффекта парения */
+        .nav-item:nth-child(1) { animation-delay: 0s; }
+        .nav-item:nth-child(2) { animation-delay: 0.8s; }
+        .nav-item:nth-child(3) { animation-delay: 1.4s; }
+        .nav-item:nth-child(4) { animation-delay: 0.4s; }
+
+        @keyframes floatNav {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-6px);
+            }
+        }
+
+        .nav-item .nav-icon {
+            font-size: 20px;
+            margin-bottom: 2px;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-item.active {
+            color: #00f2fe;
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.25) 0%, rgba(79, 70, 229, 0.4) 100%);
+            border: 2px solid rgba(0, 242, 254, 0.9);
+            box-shadow: 
+                0 0 25px rgba(0, 242, 254, 0.5),
+                inset 0 2px 6px rgba(255, 255, 255, 0.6),
+                inset 0 -2px 6px rgba(0, 0, 0, 0.9);
+            animation: floatActiveNav 3s ease-in-out infinite;
+        }
+
+        @keyframes floatActiveNav {
+            0%, 100% {
+                transform: translateY(-4px);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .nav-item.active .nav-icon {
+            transform: scale(1.15);
+            filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.9));
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="user-card">
+            <div class="username">CYBERPULS</div>
+            <div class="balance-badge">
+                <span>⚡</span>
+                <span id="lp-counter">0 LP</span>
+            </div>
+            <div class="profile-icon">👤</div>
+        </div>
+    </header>
+
+    <div class="info-strip">
+        <div class="info-item">
+            <span>🔥 Серия:</span>
+            <span class="info-value" id="streak-text">1 день</span>
+        </div>
+        <div class="info-item">
+            <span>🏆 Ранг:</span>
+            <span class="info-value" id="rank-text">Новичок</span>
+        </div>
+    </div>
+    <div class="progress-bar-container">
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progress-fill"></div>
+        </div>
+    </div>
+
+    <!-- Основной контент (Экраны) -->
+    <main class="main-content">
+        <!-- Экран 1: Арена (Колесо) -->
+        <div class="view-section active" id="view-arena">
+            <div class="win-notification" id="win-notification">+0 LP!</div>
+
+            <div class="reward-info">
+                <div class="reward-title" id="reward-status-title">Ежедневная награда!</div>
+                <div class="reward-timer" id="reward-timer-text">Доступно сейчас</div>
+            </div>
+
+            <div class="wheel-container">
+                <div class="wheel-pointer"></div>
+                <div class="wheel" id="wheel">
+                    <div class="wheel-sector s1">100</div>
+                    <div class="wheel-sector s2">25</div>
+                    <div class="wheel-sector s3">50</div>
+                    <div class="wheel-sector s4">10</div>
+                </div>
+                <button class="spin-btn" id="spin-btn" onclick="spinWheel()">SPIN</button>
+            </div>
+
+            <div class="spin-hint" id="spin-hint-text">Нажми, чтобы испытать удачу</div>
+        </div>
+
+        <!-- Экран 2: Сессии -->
+        <div class="view-section" id="view-sessions">
+            <div class="cyber-card-3d">
+                <div class="card-icon-container-3d">📊</div>
+                <div class="card-title-3d">История сессий</div>
+                <div class="card-desc-3d">Логирование активности и детальная статистика начислений LP появятся в следующем системном апдейте.</div>
+            </div>
+        </div>
+
+        <!-- Экран 3: Турниры -->
+        <div class="view-section" id="view-tournaments">
+            <div class="cyber-card-3d">
+                <div class="card-icon-container-3d">🏆</div>
+                <div class="card-title-3d">Активные турниры</div>
+                <div class="card-desc-3d">Следи за анонсами в Telegram-канале. Скоро здесь стартуют масштабные кибер-ивенты с призами!</div>
+            </div>
+        </div>
+
+        <!-- Экран 4: Лидеры -->
+        <div class="view-section" id="view-leaders">
+            <div class="cyber-card-3d">
+                <div class="card-icon-container-3d">👑</div>
+                <div class="card-title-3d">Таблица лидеров</div>
+                <div class="card-desc-3d">Глобальный рейтинг лучших участников комьюнити. Занимай верхние строчки и получай бонусы.</div>
+            </div>
+        </div>
+    </main>
+
+      <!-- Круглые парящие элементы навигации -->
+    <div class="nav-container-wrapper">
+        <nav class="nav-bar">
+            <button class="nav-item active" onclick="switchTab('arena', this)">
+                <span class="nav-icon">⚡</span>
+                <span>Арена</span>
+            </button>
+            <button class="nav-item" onclick="switchTab('sessions', this)">
+                <span class="nav-icon">📊</span>
+                <span>Сессии</span>
+            </button>
+            <button class="nav-item" onclick="switchTab('tournaments', this)">
+                <span class="nav-icon">🏆</span>
+                <span>Турниры</span>
+            </button>
+            <button class="nav-item" onclick="switchTab('leaders', this)">
+                <span class="nav-icon">👑</span>
+                <span>Лидеры</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        try {
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.ready();
+                window.Telegram.WebApp.expand();
+            }
+        } catch (e) {}
+
+        function getStorage(key, defaultValue) {
+            try {
+                let val = localStorage.getItem(key);
+                return val !== null ? val : defaultValue;
+            } catch (e) {
+                return defaultValue;
+            }
+        }
+
+        function setStorage(key, value) {
+            try {
+                localStorage.setItem(key, value);
+            } catch (e) {}
+        }
+
+        function triggerVibrate(style = 'light') {
+            try {
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+                    window.Telegram.WebApp.HapticFeedback.impactOccurred(style);
+                    return;
+                }
+            } catch (e) {}
+            try {
+                if (navigator.vibrate) {
+                    if (style === 'light') navigator.vibrate(30);
+                    else if (style === 'medium') navigator.vibrate(50);
+                    else navigator.vibrate(70);
+                }
+            } catch (e) {}
+        }
+
+        let savedLP = getStorage('cyber_lp', '0');
+        let userLP = parseInt(savedLP);
+        let streak = parseInt(getStorage('cyber_streak', '1'));
+        let lastSpinDate = getStorage('cyber_last_spin', '');
+
+        const rewards = [100, 25, 50, 10];
+        const angles = [0, 90, 180, 270];
+        let currentRotation = 0;
+        let isSpinning = false;
+
+        const lpCounter = document.getElementById('lp-counter');
+        const spinBtn = document.getElementById('spin-btn');
+        const wheel = document.getElementById('wheel');
+        const winNotification = document.getElementById('win-notification');
+        const streakText = document.getElementById('streak-text');
+        const rankText = document.getElementById('rank-text');
+        const progressFill = document.getElementById('progress-fill');
+        const rewardTimerText = document.getElementById('reward-timer-text');
+        const rewardStatusTitle = document.getElementById('reward-status-title');
+        const spinHintText = document.getElementById('spin-hint-text');
+
+        function switchTab(tabId, btnElement) {
+            triggerVibrate('light');
+
+            document.querySelectorAll('.view-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            const targetSection = document.getElementById('view-' + tabId);
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
+
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            if (btnElement) {
+                btnElement.classList.add('active');
+            }
+        }
+
+        function updateUI() {
+            lpCounter.textContent = userLP.toLocaleString() + ' LP';
+            streakText.textContent = streak + ' дн.';
+
+            let rankName = "Новичок";
+            let progressPercent = (userLP % 500) / 5;
+
+            if (userLP >= 2000) {
+                rankName = "Элита";
+                progressPercent = 100;
+            } else if (userLP >= 1000) {
+                rankName = "Хакер";
+            } else if (userLP >= 500) {
+                rankName = "Стритрейсер";
+            }
+
+            rankText.textContent = rankName;
+            progressFill.style.width = Math.min(Math.max(progressPercent, 5), 100) + '%';
+        }
+
+        function checkCooldown() {
+            if (!lastSpinDate) return;
+
+            try {
+                const lastDate = new Date(lastSpinDate);
+                const now = new Date();
+                const diffHours = (now - lastDate) / (1000 * 60 * 60);
+
+                if (diffHours < 24) {
+                    spinBtn.disabled = true;
+                    const hoursLeft = Math.ceil(24 - diffHours);
+                    rewardStatusTitle.textContent = "Награда получена";
+                    rewardTimerText.textContent = `Следующая через ~${hoursLeft}ч`;
+                    spinHintText.textContent = "Колесо заблокировано до завтра";
+                } else {
+                    spinBtn.disabled = false;
+                    rewardStatusTitle.textContent = "Ежедневная награда!";
+                    rewardTimerText.textContent = "Доступно сейчас";
+                    spinHintText.textContent = "Нажми, чтобы испытать удачу";
+                }
+            } catch (e) {}
+        }
+
+        function spinWheel() {
+            if (isSpinning) return;
+            
+            triggerVibrate('medium');
+
+            isSpinning = true;
+            spinBtn.disabled = true;
+
+            const randomIndex = Math.floor(Math.random() * rewards.length);
+            const selectedReward = rewards[randomIndex];
+            
+            const extraSpins = 360 * (5 + Math.floor(Math.random() * 3));
+            const targetAngle = extraSpins + (360 - angles[randomIndex]);
+
+            currentRotation += targetAngle;
+            wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+            setTimeout(() => {
+                userLP += selectedReward;
+                
+                try {
+                    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+                        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                    }
+                } catch(e) {}
+
+                if (lastSpinDate) {
+                    try {
+                        const lastD = new Date(lastSpinDate);
+                        const diffDays = Math.floor((new Date() - lastD) / (1000 * 60 * 60 * 24));
+                        if (diffDays === 1) {
+                            streak++;
+                        } else if (diffDays > 1) {
+                            streak = 1;
+                        }
+                    } catch (e) {}
+                }
+                
+                lastSpinDate = new Date().toISOString();
+                setStorage('cyber_lp', userLP);
+                setStorage('cyber_streak', streak);
+                setStorage('cyber_last_spin', lastSpinDate);
+
+                updateUI();
+
+                winNotification.textContent = `+${selectedReward} LP!`;
+                winNotification.classList.add('show');
+
+                setTimeout(() => {
+                    winNotification.classList.remove('show');
+                    checkCooldown();
+                    isSpinning = false;
+                }, 2000);
+
+            }, 4000);
+        }
+
+        updateUI();
+        checkCooldown();
+    </script>
+</body>
+</html>
