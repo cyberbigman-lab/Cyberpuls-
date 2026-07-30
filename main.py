@@ -35,6 +35,9 @@ class UserGetRequest(BaseModel):
     user_id: str
     username: str = "Tanker"
 
+class ClaimRewardRequest(BaseModel):
+    user_id: str
+
 @app.get("/")
 def read_root():
     return {"status": "online", "project": "CyberPuls Blitz Tracker"}
@@ -51,7 +54,7 @@ def check_admin(data: AdminRequest):
         
     return {"status": "ok", "message": "Добро пожаловать в админку!"}
 
-# НОВЫЙ ЭНДПОИНТ: Получение списка ВСЕХ пользователей для администратора
+# ЭНДПОИНТ: Получение списка ВСЕХ пользователей для администратора
 @app.get("/api/admin/users")
 def get_all_users_admin(admin_id: str = Query(...)):
     try:
@@ -66,12 +69,10 @@ def get_all_users_admin(admin_id: str = Query(...)):
         raise HTTPException(status_code=500, detail="База данных не подключена")
 
     try:
-        # Достаем всех пользователей из таблицы, сортируя по LP от большего к меньшему
-        response = supabase.table("users").select("telegram_id, username, lp").order("lp", desc=True).execute()
+        response = supabase.table("users").select("telegram_id, username, lp, streak").order("lp", desc=True).execute()
         
         users_data = response.data if response.data else []
         
-        # На случай если в таблице еще нет поля streak, проставляем дефолтное значение 0, чтобы фронтенд не ломался
         formatted_users = []
         for u in users_data:
             formatted_users.append({
@@ -117,23 +118,51 @@ def get_user(data: UserGetRequest):
     if not supabase:
         raise HTTPException(status_code=500, detail="База данных не подключена")
     try:
-        response = supabase.table("users").select("lp").eq("telegram_id", data.user_id).execute()
+        response = supabase.table("users").select("lp, streak").eq("telegram_id", data.user_id).execute()
         if response.data and len(response.data) > 0:
             supabase.table("users").update({"username": data.username}).eq("telegram_id", data.user_id).execute()
-            return {"status": "success", "lp": response.data[0].get("lp", 0)}
+            return {
+                "status": "success", 
+                "lp": response.data[0].get("lp", 0),
+                "streak": response.data[0].get("streak", 0)
+            }
         else:
-            supabase.table("users").insert({"telegram_id": data.user_id, "lp": 0, "username": data.username}).execute()
-            return {"status": "success", "lp": 0}
+            supabase.table("users").insert({"telegram_id": data.user_id, "lp": 0, "streak": 0, "username": data.username}).execute()
+            return {"status": "success", "lp": 0, "streak": 0}
     except Exception as e:
         try:
-            response = supabase.table("users").select("lp").eq("telegram_id", data.user_id).execute()
+            response = supabase.table("users").select("lp, streak").eq("telegram_id", data.user_id).execute()
             if response.data and len(response.data) > 0:
-                return {"status": "success", "lp": response.data[0].get("lp", 0)}
+                return {
+                    "status": "success", 
+                    "lp": response.data[0].get("lp", 0),
+                    "streak": response.data[0].get("streak", 0)
+                }
             else:
-                supabase.table("users").insert({"telegram_id": data.user_id, "lp": 0}).execute()
-                return {"status": "success", "lp": 0}
+                supabase.table("users").insert({"telegram_id": data.user_id, "lp": 0, "streak": 0}).execute()
+                return {"status": "success", "lp": 0, "streak": 0}
         except Exception as inner_e:
             raise HTTPException(status_code=500, detail=str(inner_e))
+
+# ЭНДПОИНТ: Получение ежедневной награды
+@app.post("/api/user/claim")
+def claim_daily(data: ClaimRewardRequest):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="База данных не подключена")
+    try:
+        res = supabase.table("users").select("lp, streak").eq("telegram_id", data.user_id).execute()
+        if res.data and len(res.data) > 0:
+            current_lp = res.data[0].get("lp", 0)
+            current_streak = res.data[0].get("streak", 0)
+            new_lp = current_lp + 100
+            new_streak = current_streak + 1
+            supabase.table("users").update({"lp": new_lp, "streak": new_streak}).eq("telegram_id", data.user_id).execute()
+            return {"status": "success", "lp": new_lp, "streak": new_streak}
+        else:
+            supabase.table("users").insert({"telegram_id": data.user_id, "lp": 100, "streak": 1}).execute()
+            return {"status": "success", "lp": 100, "streak": 1}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/leaders")
 def get_leaders():
@@ -149,4 +178,4 @@ def get_leaders():
             return {"status": "success", "leaders": leaders}
         except Exception as inner_e:
             raise HTTPException(status_code=500, detail=str(inner_e))
-                                                           
+                    
