@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CyberPuls - Blitz Tracker</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #020308;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* КОСМОС И ЗВЕЗДНОЕ НЕБО НА ФОНЕ */
+        .space-background {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 40%, rgba(25, 12, 40, 0.85) 0%, rgba(2, 3, 8, 0.99) 85%);
+            z-index: -3;
+            overflow: hidden;
+        }
+
+        .stars-layer {
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background-image: 
+                radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+                radial-gradient(1.5px 1.5px at 40px 70px, rgba(0, 242, 254, 0.9), rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 90px 40px, #ffffff, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 130px 150px, rgba(255, 150, 100, 0.8), rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 160px 110px, #ffffff, rgba(0,0,0,0)),
+                radial-gradient(1.5px 1.5px at 200px 220px, #ffffff, rgba(0,0,0,0));
+            background-repeat: repeat;
+            background-size: 220px 220px;
+            opacity: 0.6;
+            animation: twinkleStars 120s linear infinite;
+        }
+
+        @keyframes twinkleStars {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(50%); }
+        }
+
+        /* КОНТЕЙНЕР ДЛЯ РЕАЛИСТИЧНОЙ КАРТИНКИ И КОРАБЛЯ */
+        .interstellar-universe {
+            position: absolute;
+            top: 48%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 380px;
+            height: 380px;
+            z-index: 0;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .black-hole-image {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: url('bg.jpg'); 
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            mask-image: radial-gradient(circle, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 70%);
+            -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 70%);
+            z-index: 1;
+            animation: pulseHole 8s ease-in-out infinite;
+        }
+
+        @keyframes pulseHole {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .spaceship-orbit {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            z-index: 10;
+            animation: orbitShip 25s linear infinite;
+        }
+
+        .spaceship {
+            position: absolute;
+            top: -120px;
+            left: -20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            animation: shipSpin 6s linear infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .spaceship svg * { transition: stroke 0.3s ease, fill 0.3s ease; }
+        .spaceship.hyperjump { transform: scale(1.5); }
+        .spaceship.hyperjump svg { filter: drop-shadow(0 0 10px #00f2fe) drop-shadow(0 0 25px #00f2fe); }
+        .spaceship.hyperjump svg * { stroke: #00f2fe !important; }
+        .spaceship.hyperjump svg circle[fill="#000000"], 
+        .spaceship.hyperjump svg rect[fill="#000000"] { fill: #00f2fe !important; }
+
+        @keyframes orbitShip { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes shipSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(-360deg); } }
+
+        /* UI И ШАПКА */
+        .header {
+            position: relative; z-index: 10;
+            padding: 14px 20px 6px 20px;
+            display: flex; justify-content: center; width: 100%; flex-shrink: 0;
+        }
+
+        .user-card {
+            background: transparent; border: none; border-radius: 0; padding: 4px 10px;
+            display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 400px;
+        }
+
+        .username {
+            font-weight: 800; font-size: 15px; letter-spacing: 1.2px; color: #f8fafc;
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+        }
+
+        .balance-badge {
+            display: flex; align-items: center; gap: 6px;
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.2) 0%, rgba(79, 70, 229, 0.2) 100%);
+            border: 1px solid rgba(0, 242, 254, 0.5); padding: 6px 14px; border-radius: 20px;
+            font-weight: 700; font-size: 14px; color: #00f2fe; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+
+        .profile-icon {
+            width: 34px; height: 34px; background: linear-gradient(135deg, rgba(0, 242, 254, 0.25), rgba(79, 70, 229, 0.35));
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            color: #00f2fe; border: 1px solid rgba(0, 242, 254, 0.5); box-shadow: 0 0 12px rgba(0, 242, 254, 0.3);
+            cursor: pointer; transition: transform 0.2s;
+        }
+        .profile-icon:active { transform: scale(0.9); }
+
+        .info-strip {
+            position: relative; z-index: 10; display: flex; justify-content: space-between;
+            align-items: center; width: 100%; max-width: 400px; margin: 0 auto; padding: 0 24px;
+            font-size: 12px; color: #94a3b8; flex-shrink: 0;
+        }
+
+        .info-item { display: flex; align-items: center; gap: 4px; }
+        .info-value { color: #fff; font-weight: 600; }
+
+        /* ПРОГРЕСС-БАР С ПРОЦЕНТАМИ */
+        .progress-bar-container {
+            position: relative; z-index: 10; width: 100%; max-width: 400px;
+            margin: 6px auto 0 auto; padding: 0 24px; flex-shrink: 0; display: flex; align-items: center; gap: 10px; 
+        }
+
+        .progress-bar-bg {
+            flex: 1; height: 6px; background: rgba(10, 15, 30, 0.9); border-radius: 4px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .progress-bar-fill {
+            height: 100%; background: linear-gradient(90deg, #00f2fe, #4f46e5); width: 0%; transition: width 0.5s ease; box-shadow: 0 0 12px rgba(0, 242, 254, 0.9);
+        }
+        .progress-percent { font-size: 11px; font-weight: 700; color: #00f2fe; min-width: 32px; text-align: right; text-shadow: 0 0 8px rgba(0, 242, 254, 0.5); }
+
+        /* КОНТЕЙНЕРЫ ЭКРАНОВ */
+        .main-content {
+            position: relative; z-index: 10; flex: 1; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; width: 100%; pointer-events: none;
+        }
+        .main-content::-webkit-scrollbar { width: 0; } 
+
+        .view-section {
+            display: none; width: 100%; height: 100%; flex: 1; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; position: relative; pointer-events: auto;
+        }
+        .view-section.active { display: flex; }
+        .hidden { display: none !important; }
+        #view-main { justify-content: flex-start; padding-top: 35px; pointer-events: none; }
+
+        /* ЕЖЕДНЕВНАЯ НАГРАДА НА ГЛАВНОЙ */
+        .daily-reward-container {
+            position: absolute; top: 25px; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; pointer-events: auto;
+        }
+        .daily-reward-card {
+            background: linear-gradient(135deg, rgba(16, 26, 56, 0.9) 0%, rgba(6, 11, 26, 0.95) 100%); border: 2px solid #00f2fe; border-radius: 28px; padding: 20px 36px; cursor: pointer; box-shadow: 0 0 25px rgba(0, 242, 254, 0.4), inset 0 0 15px rgba(0, 242, 254, 0.2); animation: neonPulse 2s ease-in-out infinite alternate; transition: transform 0.1s ease;
+        }
+        .daily-reward-card:active { transform: scale(0.95); }
+
+        @keyframes neonPulse {
+            0% { box-shadow: 0 0 15px rgba(0, 242, 254, 0.3), inset 0 0 10px rgba(0, 242, 254, 0.1); border-color: rgba(0, 242, 254, 0.6); }
+            100% { box-shadow: 0 0 35px rgba(0, 242, 254, 0.9), inset 0 0 20px rgba(0, 242, 254, 0.5); border-color: #00f2fe; }
+        }
+
+        .daily-reward-container.epic-claiming { pointer-events: none; animation: epicExplosion 0.8s ease-out forwards; }
+        @keyframes epicExplosion {
+            0% { transform: scale(1); filter: brightness(1); opacity: 1; }
+            40% { transform: scale(1.15); filter: brightness(1.8) drop-shadow(0 0 30px #00f2fe); opacity: 1; }
+            80% { transform: scale(1.4); filter: brightness(2.5) drop-shadow(0 0 60px #00f2fe); opacity: 0.8; }
+            100% { transform: scale(2); filter: brightness(4) drop-shadow(0 0 100px #00f2fe); opacity: 0; }
+        }
+
+        .reward-icon-text { font-size: 26px; font-weight: 800; color: #00f2fe; text-shadow: 0 0 15px rgba(0, 242, 254, 0.9); margin-bottom: 4px; }
+        .reward-action-label { font-size: 14px; font-weight: 700; color: #cbd5e1; letter-spacing: 0.5px; }
+        .daily-reward-subtext { color: #ffffff; font-size: 13px; font-weight: 600; margin-top: 14px; text-shadow: 0 0 8px rgba(255, 255, 255, 0.6); letter-spacing: 0.5px; }
+
+        /* 3D КАРТОЧКИ ДЛЯ ДРУГИХ ВКЛАДОК */
+        .cyber-card-3d {
+            pointer-events: auto; background: linear-gradient(135deg, rgba(16, 26, 56, 0.85) 0%, rgba(6, 11, 26, 0.95) 100%);
+            border: 2px solid rgba(0, 242, 254, 0.5); border-radius: 30px; padding: 34px 26px; max-width: 340px; width: 100%;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.85), 0 0 40px rgba(0, 242, 254, 0.2); backdrop-filter: blur(25px); animation: floatCard3D 5s ease-in-out infinite; position: relative;
+        }
+        .cyber-card-3d::before {
+            content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 2px; background: linear-gradient(90deg, transparent, rgba(0, 242, 254, 1), transparent); border-radius: 50%; box-shadow: 0 0 10px #00f2fe;
+        }
+        @keyframes floatCard3D { 0%, 100% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-10px) rotate(0.5deg); } }
+        
+        .card-icon-container-3d { width: 76px; height: 76px; margin: 0 auto 20px auto; background: linear-gradient(135deg, rgba(0, 242, 254, 0.15) 0%, rgba(79, 70, 229, 0.25) 100%); border: 2px solid rgba(0, 242, 254, 0.5); border-radius: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 12px 30px rgba(0, 242, 254, 0.3); }
+        .card-svg-icon { width: 32px; height: 32px; stroke: #00f2fe; stroke-width: 2; fill: none; filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.7)); }
+        .card-title-3d { font-size: 20px; font-weight: 800; color: #00f2fe; margin-bottom: 12px; letter-spacing: 1px; text-shadow: 0 0 15px rgba(0, 242, 254, 0.6); }
+        .card-desc-3d { font-size: 14px; color: #94a3b8; line-height: 1.6; font-weight: 400; }
+
+        /* ================= АДМИН-ПАНЕЛЬ (ТЕРМИНАЛ) ================= */
+        #view-admin {
+            justify-content: flex-start; padding: 10px 20px 40px 20px;
+        }
+        .admin-header-box { margin-bottom: 20px; width: 100%; max-width: 400px; display: flex; justify-content: space-between; align-items: center; }
+        .admin-title { font-size: 20px; font-weight: 900; color: #f43f5e; text-shadow: 0 0 15px rgba(244, 63, 94, 0.7); letter-spacing: 2px; }
+        .admin-close { background: transparent; border: 1px solid #f43f5e; color: #f43f5e; padding: 4px 12px; border-radius: 12px; font-size: 12px; cursor: pointer; }
+        
+        .admin-module {
+            background: rgba(10, 15, 30, 0.85); border: 1px solid rgba(244, 63, 94, 0.4); border-radius: 20px; padding: 16px; margin-bottom: 16px; width: 100%; max-width: 400px; text-align: left; box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px);
+        }
+        .admin-module-title { font-size: 13px; color: #f43f5e; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; border-bottom: 1px solid rgba(244, 63, 94, 0.2); padding-bottom: 6px; display: flex; align-items: center; gap: 8px;}
+        
+        /* Аналитика Дашборд */
+        .admin-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .admin-stat-card { background: rgba(0,0,0,0.3); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.05); }
+        .admin-stat-val { font-size: 16px; font-weight: 800; color: #fff; }
+        .admin-stat-lbl { font-size: 10px; color: #94a3b8; }
+
+        /* Формы и кнопки админки */
+        .admin-input-group { display: flex; gap: 8px; margin-bottom: 10px; }
+        .admin-input { flex: 1; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 10px 12px; border-radius: 10px; font-size: 13px; outline: none; }
+        .admin-input:focus { border-color: #f43f5e; }
+        .admin-btn { background: rgba(244, 63, 94, 0.15); border: 1px solid #f43f5e; color: #f43f5e; padding: 10px 16px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.2s; white-space: nowrap; }
+        .admin-btn:active { transform: scale(0.95); background: #f43f5e; color: #fff; }
+        .admin-btn.danger { background: rgba(255, 0, 0, 0.1); border-color: red; color: red; }
+        
+        /* Тумблер (Switch) */
+        .admin-switch-row { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 10px 12px; border-radius: 10px; margin-bottom: 10px; }
+        .admin-switch-lbl { font-size: 13px; color: #cbd5e1; font-weight: 600; }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #f43f5e; }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* НАВИГАЦИЯ */
+        .nav-container-wrapper {
+            position: relative; z-index: 10; padding: 20px 16px 20px 16px; display: flex; justify-content: center; flex-shrink: 0; width: 100%; background: transparent; overflow: visible;
+        }
+        .nav-bar {
+            background: transparent; border: none; padding: 0; display: flex; justify-content: space-around; align-items: center; width: 100%; max-width: 400px; gap: 12px; box-shadow: none; position: relative; overflow: visible;
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(10, 15, 30, 0.35); border: 1px solid rgba(0, 242, 254, 0.2); color: #64748b; font-size: 9px; font-weight: 700; cursor: pointer; width: 72px; height: 72px; border-radius: 50%; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); position: relative; transition: transform 0.2s ease, background 0.3s ease, border-color 0.3s ease; animation: floatNav 3.5s ease-in-out infinite;
+        }
+        .nav-item:active { transform: scale(0.92); }
+        .nav-item:nth-child(1) { animation-delay: 0s; } .nav-item:nth-child(2) { animation-delay: 0.8s; } .nav-item:nth-child(3) { animation-delay: 1.4s; } .nav-item:nth-child(4) { animation-delay: 0.4s; }
+        @keyframes floatNav { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-6px); } }
+        .nav-svg { width: 22px; height: 22px; stroke: #64748b; stroke-width: 2; fill: none; margin-bottom: 3px; transition: all 0.3s ease; }
+        .nav-item.active { color: #00f2fe; background: rgba(0, 242, 254, 0.15); border: 1.5px solid rgba(0, 242, 254, 0.8); box-shadow: 0 0 20px rgba(0, 242, 254, 0.4); animation: floatActiveNav 3s ease-in-out infinite; }
+        @keyframes floatActiveNav { 0%, 100% { transform: translateY(-4px); } 50% { transform: translateY(-10px); } }
+        .nav-item.active .nav-svg { stroke: #00f2fe; fill: none; filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.9)); transform: scale(1.15); }
+        
+        /* МОДАЛКА ПРОФИЛЯ */
+        .profile-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(2, 3, 8, 0.8); backdrop-filter: blur(10px); z-index: 100; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .profile-modal-overlay.active { opacity: 1; pointer-events: all; }
+        .profile-modal-content { width: 100%; max-width: 450px; background: linear-gradient(180deg, rgba(16, 26, 56, 0.95) 0%, rgba(6, 11, 26, 1) 100%); border-top: 2px solid rgba(0, 242, 254, 0.5); border-radius: 30px 30px 0 0; padding: 30px 20px 40px 20px; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 -10px 40px rgba(0, 242, 254, 0.15); position: relative; }
+        .profile-modal-overlay.active .profile-modal-content { transform: translateY(0); }
+        .close-profile-btn { position: absolute; top: 15px; right: 20px; background: rgba(255, 255, 255, 0.1); border: none; color: #94a3b8; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: all 0.2s; }
+        .close-profile-btn:active { background: rgba(255, 255, 255, 0.2); transform: scale(0.9); }
+        .profile-header-large { display: flex; flex-direction: column; align-items: center; margin-bottom: 24px; }
+        .profile-avatar-large { width: 70px; height: 70px; background: linear-gradient(135deg, rgba(0, 242, 254, 0.2), rgba(79, 70, 229, 0.4)); border: 2px solid #00f2fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 0 20px rgba(0, 242, 254, 0.4); margin-bottom: 12px; }
+        .profile-name-large { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0, 242, 254, 0.5); margin-bottom: 4px; }
+        .profile-id { font-size: 12px; color: #64748b; font-weight: 500; }
+        .profile-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+        .stat-box { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; align-items: flex-start; }
+        .stat-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .stat-value { font-size: 18px; font-weight: 700; }
+        .text-cyan { color: #00f2fe; text-shadow: 0 0 8px rgba(0, 242, 254, 0.4); } .text-orange { color: #f97316; text-shadow: 0 0 8px rgba(249, 115, 22, 0.4); } .text-purple { color: #a855f7; text-shadow: 0 0 8px rgba(168, 85, 247, 0.4); } .text-white { color: #fff; }
+        
+        .profile-actions { display: flex; flex-direction: column; gap: 10px; }
+        .action-btn { width: 100%; background: rgba(0, 242, 254, 0.1); border: 1px solid rgba(0, 242, 254, 0.3); color: #00f2fe; padding: 14px; border-radius: 12px; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s; }
+        .action-btn:active { transform: scale(0.97); background: rgba(0, 242, 254, 0.2); }
+        .action-btn.secondary { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #cbd5e1; }
+    </style>
+</head>
+<body>
+
+    <div class="space-background">
+        <div class="stars-layer"></div>
+    </div>
+
+    <div class="interstellar-universe">
+        <div class="black-hole-image"></div>
+        <div class="spaceship-orbit">
+            <div class="spaceship" id="endurance-ship">
+                <svg width="34" height="34" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="20" cy="20" r="4.5" fill="#000000" stroke="#000000" stroke-width="1.2"/>
+                    <circle cx="20" cy="20" r="13" stroke="#000000" stroke-width="3" stroke-dasharray="3.5 2.5" fill="none"/>
+                    <rect x="18.5" y="4" width="3" height="4" rx="1" fill="#000000"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <header class="header">
+        <div class="user-card">
+            <div class="username" id="main-username">CYBERPULS</div>
+            <div class="balance-badge">
+                <span>⚡</span>
+                <span id="lp-counter">0 LP</span>
+            </div>
+            <div class="profile-icon" onclick="openProfile()">👤</div>
+        </div>
+    </header>
+
+    <div class="info-strip">
+        <div class="info-item"><span>🔥 Серия:</span><span class="info-value" id="streak-text">0 дней</span></div>
+        <div class="info-item"><span>🏆 Ранг:</span><span class="info-value" id="rank-text">Бронза</span></div>
+    </div>
+    
+    <div class="progress-bar-container">
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
+        <span class="progress-percent" id="progress-percent-text">0%</span>
+    </div>
+
+    <main class="main-content">
+        <div class="view-section active" id="view-main">
+            <div class="daily-reward-container" id="daily-container">
+                <div class="daily-reward-card" onclick="claimDailyReward()">
+                    <div class="reward-icon-text">⚡ +100 LP</div>
+                    <div class="reward-action-label">ЗАБРАТЬ</div>
+                </div>
+                <div class="daily-reward-subtext">награда за ежедневный вход</div>
+            </div>
+        </div>
+
+        <div class="view-section" id="view-sessions">
+            <div class="cyber-card-3d">
+                <div class="card-icon-container-3d">
+                    <svg class="card-svg-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                </div>
+                <div class="card-title-3d">История сессий</div>
+                <div class="card-desc-3d">Логирование активности и детальная статистика начислений LP появятся в следующем системном апдейте.</div>
+            </div>
+        </div>
+
+        <div class="view-section" id="view-tournaments">
+            <div class="cyber-card-3d">
+                <div class="card-icon-container-3d">
+                    <svg class="card-svg-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>
+                </div>
+                <div class="card-title-3d">Магазин</div>
+                <div class="card-desc-3d">Эксклюзивные бусты, кастомизация и ценные награды за заработанные LP появятся в следующем обновлении.</div>
+            </div>
+        </div>
+
+        <div class="view-section" id="view-leaders">
+            <div class="cyber-card-3d">
+                <div class="card-icon-container-3d">
+                    <svg class="card-svg-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/><path stroke-linecap="round" stroke-linejoin="round" d="M3 20h18"/></svg>
+                </div>
+                <div class="card-title-3d">Таблица лидеров</div>
+                <div class="card-desc-3d">Глобальный рейтинг лучших участников комьюнити. Занимай верхние строчки и получай бонусы.</div>
+            </div>
+        </div>
+
+        <!-- ================= АДМИН-ПАНЕЛЬ ================= -->
+        <div class="view-section" id="view-admin">
+            <div class="admin-header-box">
+                <div class="admin-title">ROOT_ACCESS</div>
+                <button class="admin-close" onclick="exitAdmin()">ВЫЙТИ</button>
+            </div>
+
+            <div class="admin-module">
+                <div class="admin-module-title">📊 LIVE АНАЛИТИКА</div>
+                <div class="admin-stats-grid">
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-lbl">Всего юзеров</div>
+                        <div class="admin-stat-val">1,204</div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-lbl">Онлайн (DAU)</div>
+                        <div class="admin-stat-val">342</div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-lbl">Эмиссия LP</div>
+                        <div class="admin-stat-val">580.4K</div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-lbl">API Lesta (Запросы)</div>
+                        <div class="admin-stat-val" style="color:#22c55e;">45 / min</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-module">
+                <div class="admin-module-title">👥 МОДЕРАЦИЯ ЮЗЕРА</div>
+                <div class="admin-input-group">
+                    <input type="text" id="admin-user-id" class="admin-input" placeholder="ID игрока или Ник">
+                </div>
+                <div class="admin-input-group">
+                    <input type="number" id="admin-lp-amount" class="admin-input" placeholder="Сумма LP (+ или -)">
+                    <button class="admin-btn" onclick="adminAction('give_lp')">Выдать LP</button>
+                </div>
+                <div class="admin-input-group">
+                    <button class="admin-btn danger" style="width:100%;" onclick="adminAction('ban')">ЗАБЛОКИРОВАТЬ ИГРОКА</button>
+                </div>
+            </div>
+
+            <div class="admin-module">
+                <div class="admin-module-title">🎁 ГЕНЕРАТОР ПРОМОКОДОВ</div>
+                <div class="admin-input-group">
+                    <input type="text" id="admin-promo-name" class="admin-input" placeholder="Код (напр. CYBER_500)">
+                </div>
+                <div class="admin-input-group">
+                    <input type="number" id="admin-promo-val" class="admin-input" placeholder="Награда LP">
+                    <button class="admin-btn" onclick="adminAction('create_promo')">СОЗДАТЬ</button>
+                </div>
+            </div>
+
+            <div class="admin-module">
+                <div class="admin-module-title">⚙️ ГЛОБАЛЬНЫЙ КОНТРОЛЬ</div>
+                <div class="admin-switch-row">
+                    <span class="admin-switch-lbl">Технические работы</span>
+                    <label class="switch">
+                        <input type="checkbox" id="admin-maintenance" onchange="adminAction('maintenance')">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="admin-input-group" style="margin-top: 15px;">
+                    <input type="text" id="admin-alert-msg" class="admin-input" placeholder="Текст пуш-уведомления всем...">
+                </div>
+                <button class="admin-btn" style="width: 100%;" onclick="adminAction('send_alert')">ОТПРАВИТЬ ВСЕМ</button>
+            </div>
+
+            <!-- УПРАВЛЕНИЕ ДОПОЛНИТЕЛЬНЫМИ АДМИНАМИ (В САМОМ НИЗУ) -->
+            <div class="admin-module">
+                <div class="admin-module-title">👑 УПРАВЛЕНИЕ АДМИНАМИ</div>
+                <div class="admin-input-group">
+                    <input type="number" id="admin-new-id" class="admin-input" placeholder="Telegram ID нового админа">
+                    <button class="admin-btn" onclick="addAdminId()">Добавить</button>
+                </div>
+                <div id="admins-list" style="font-size: 12px; color: #94a3b8; margin-top: 10px; line-height: 1.5;">
+                    <!-- Динамический список -->
+                </div>
+            </div>
+            
+            <div style="height: 100px; width: 100%;"></div>
+        </div>
+    </main>
+
+    <!-- Панель навигации -->
+    <div class="nav-container-wrapper">
+        <nav class="nav-bar" id="nav-bar">
+            <button class="nav-item active" onclick="switchTab('main', this)">
+                <svg class="nav-svg" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span>Главная</span>
+            </button>
+            <button class="nav-item" onclick="switchTab('sessions', this)">
+                <svg class="nav-svg" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                <span>Сессии</span>
+            </button>
+            <button class="nav-item" onclick="switchTab('tournaments', this)">
+                <svg class="nav-svg" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>
+                <span>Магазин</span>
+            </button>
+            <button class="nav-item" onclick="switchTab('leaders', this)">
+                <svg class="nav-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span>Лидеры</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- ВСПЛЫВАЮЩЕЕ ОКНО ПРОФИЛЯ -->
+    <div class="profile-modal-overlay" id="profile-modal" onclick="closeProfileOnOverlay(event)">
+        <div class="profile-modal-content">
+            <button class="close-profile-btn" onclick="closeProfile()">✕</button>
+            <div class="profile-header-large">
+                <div class="profile-avatar-large">👤</div>
+                <div class="profile-name-large" id="profile-name-display">CYBERPULS</div>
+                <div class="profile-id" id="profile-id-display">ID: ---</div>
+            </div>
+            <div class="profile-stats-grid">
+                <div class="stat-box"><div class="stat-label">Всего LP</div><div class="stat-value text-cyan" id="profile-lp">0</div></div>
+                <div class="stat-box"><div class="stat-label">Серия</div><div class="stat-value text-orange" id="profile-streak">0 дн.</div></div>
+                <div class="stat-box"><div class="stat-label">Турниры</div><div class="stat-value text-purple">0</div></div>
+                <div class="stat-box"><div class="stat-label">Ранг (PUBG)</div><div class="stat-value text-white" id="profile-rank">Бронза</div></div>
+            </div>
+            <div class="profile-actions">
+                <button class="action-btn"><span>🔗</span> Подключить TON Кошелек</button>
+                <button class="action-btn secondary"><span>⚙️</span> Настройки</button>
+                
+                <!-- СКРЫТАЯ КНОПКА АДМИНА -->
+                <button id="admin-panel-btn" class="action-btn" style="display: none; background: rgba(244, 63, 94, 0.15); border-color: rgba(244, 63, 94, 0.5); color: #f43f5e;" onclick="openAdminPanelFromProfile()">
+                    <span>👑</span> Терминал ROOT
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Главный создатель (Мастер-админ)
+        const MASTER_ADMIN_ID = 8976502503;
+
+        let tg = window.Telegram ? window.Telegram.WebApp : null;
+        try { if (tg) { tg.ready(); tg.expand(); } } catch (e) {}
+
+        function showAlert(msg) {
+            if (tg && tg.showAlert) tg.showAlert(msg);
+            else alert(msg);
+        }
+
+        function getStorage(key, defaultValue) {
+            try { return localStorage.getItem(key) !== null ? localStorage.getItem(key) : defaultValue; } 
+            catch (e) { return defaultValue; }
+        }
+        function setStorage(key, value) { try { localStorage.setItem(key, value); } catch (e) {} }
+
+        // Работа со списком дополнительных админов через localStorage
+        function getExtraAdmins() {
+            try {
+                let val = localStorage.getItem('cyber_extra_admins');
+                return val ? JSON.parse(val) : [];
+            } catch (e) { return []; }
+        }
+
+        function saveExtraAdmins(admins) {
+            try {
+                localStorage.setItem('cyber_extra_admins', JSON.stringify(admins));
+            } catch (e) {}
+        }
+
+        function triggerVibrate(style = 'light') {
+            try { if (tg && tg.HapticFeedback) { tg.HapticFeedback.impactOccurred(style); return; } } catch (e) {}
+            try { if (navigator.vibrate) { navigator.vibrate(style === 'light' ? 30 : style === 'medium' ? 50 : 70); } } catch (e) {}
+        }
+
+        let savedLP = getStorage('cyber_lp', '0');
+        let userLP = parseInt(savedLP);
+        let streak = parseInt(getStorage('cyber_streak', '0'));
+        let lastClaimDate = getStorage('cyber_last_claim', '');
+
+        const lpCounter = document.getElementById('lp-counter');
+        const streakText = document.getElementById('streak-text');
+        const rankText = document.getElementById('rank-text');
+        const progressFill = document.getElementById('progress-fill');
+        const progressPercentText = document.getElementById('progress-percent-text');
+        const dailyContainer = document.getElementById('daily-container');
+
+        // Инициализация пользователя и проверка прав
+        function initUserData() {
+            let userId = MASTER_ADMIN_ID; // По умолчанию для теста в браузере
+            let userName = "CYBERPULS";
+
+            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                const user = tg.initDataUnsafe.user;
+                userId = user.id;
+                userName = user.username ? user.username.toUpperCase() : (user.first_name || 'TANKER').toUpperCase();
+            }
+            
+            document.getElementById('main-username').textContent = userName;
+            document.getElementById('profile-name-display').textContent = userName;
+            document.getElementById('profile-id-display').textContent = 'ID: ' + userId;
+
+            // Проверяем: Мастер-админ или один из добавленных через панель
+            let extraAdmins = getExtraAdmins();
+            if (userId === MASTER_ADMIN_ID || extraAdmins.includes(userId)) {
+                document.getElementById('admin-panel-btn').style.display = 'flex';
+            }
+        }
+
+        // Рендер списка админов внизу панели
+        function renderAdminsList() {
+            let listEl = document.getElementById('admins-list');
+            if (!listEl) return;
+            let admins = getExtraAdmins();
+            if (admins.length === 0) {
+                listEl.innerHTML = 'Дополнительные админы не добавлены.';
+                return;
+            }
+            let html = 'Активные ID: <br>';
+            html += admins.map(id => `<span style="display:inline-block; margin-top:4px; background:rgba(0,0,0,0.4); padding:2px 8px; border-radius:6px; border:1px solid rgba(244,63,94,0.3);">${id} <span style="color:#f43f5e; cursor:pointer; margin-left:8px; font-weight:bold;" onclick="removeAdminId(${id})">[✕]</span></span>`).join(' ');
+            listEl.innerHTML = html;
+        }
+
+        function addAdminId() {
+            let input = document.getElementById('admin-new-id');
+            let newId = parseInt(input.value.trim());
+            if (!newId || isNaN(newId)) {
+                return showAlert("Введите корректный Telegram ID!");
+            }
+            let admins = getExtraAdmins();
+            if (admins.includes(newId) || newId === MASTER_ADMIN_ID) {
+                return showAlert("Этот ID уже имеет доступ!");
+            }
+            admins.push(newId);
+            saveExtraAdmins(admins);
+            input.value = '';
+            renderAdminsList();
+            showAlert(`Админ с ID ${newId} успешно добавлен!`);
+        }
+
+        function removeAdminId(idToRemove) {
+            let admins = getExtraAdmins();
+            admins = admins.filter(id => id !== idToRemove);
+            saveExtraAdmins(admins);
+            renderAdminsList();
+            showAlert(`Админ с ID ${idToRemove} удален.`);
+        }
+
+        function openAdminPanelFromProfile() {
+            closeProfile();
+            setTimeout(() => {
+                triggerVibrate('heavy');
+                document.querySelectorAll('.view-section').forEach(section => section.classList.remove('active'));
+                document.getElementById('view-admin').classList.add('active');
+                document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+                renderAdminsList(); // Обновляем список при открытии
+                showAlert("Внимание: Активирован ROOT-доступ терминала.");
+            }, 300);
+        }
+
+        function exitAdmin() {
+            triggerVibrate('medium');
+            switchTab('main', document.querySelector('.nav-item:nth-child(1)'));
+        }
+
+        function adminAction(actionType) {
+            triggerVibrate('medium');
+            if (actionType === 'give_lp') {
+                let uid = document.getElementById('admin-user-id').value;
+                let amt = document.getElementById('admin-lp-amount').value;
+                if(!uid || !amt) return showAlert("Введите ID юзера и сумму LP");
+                showAlert(`Успешно!\nИгроку ${uid} начислено/списано: ${amt} LP.`);
+            } 
+            else if (actionType === 'ban') {
+                let uid = document.getElementById('admin-user-id').value;
+                if(!uid) return showAlert("Укажите ID игрока для блокировки!");
+                showAlert(`Игрок ${uid} навсегда заблокирован в системе.`);
+            }
+            else if (actionType === 'create_promo') {
+                let code = document.getElementById('admin-promo-name').value;
+                let val = document.getElementById('admin-promo-val').value;
+                if(!code || !val) return showAlert("Укажите код и награду.");
+                showAlert(`Промокод ${code} на ${val} LP успешно создан и добавлен в БД!`);
+            }
+            else if (actionType === 'maintenance') {
+                let isChecked = document.getElementById('admin-maintenance').checked;
+                showAlert(isChecked ? "Технические работы ВКЛЮЧЕНЫ. Юзеров выкинет из приложения." : "Технические работы ВЫКЛЮЧЕНЫ. Сервер открыт.");
+            }
+            else if (actionType === 'send_alert') {
+                let msg = document.getElementById('admin-alert-msg').value;
+                if(!msg) return showAlert("Введите текст уведомления!");
+                showAlert(`Global Alert отправлен всем онлайн пользователям:\n"${msg}"`);
+            }
+        }
+
+        const ship = document.getElementById('endurance-ship');
+        if (ship) {
+            ship.addEventListener('pointerdown', function(event) {
+                event.stopPropagation();
+                triggerVibrate('heavy');
+                ship.classList.add('hyperjump');
+                try {
+                    const anims = document.getAnimations();
+                    anims.forEach(anim => { if (['orbitShip', 'shipSpin', 'pulseHole', 'twinkleStars'].includes(anim.animationName)) anim.playbackRate = 5.0; });
+                    setTimeout(() => {
+                        ship.classList.remove('hyperjump');
+                        anims.forEach(anim => { if (['orbitShip', 'shipSpin', 'pulseHole', 'twinkleStars'].includes(anim.animationName)) anim.playbackRate = 1.0; });
+                    }, 1500);
+                } catch (e) { setTimeout(() => { ship.classList.remove('hyperjump'); }, 1500); }
+            });
+        }
+
+        function checkDailyStatus() {
+            let today = new Date().toDateString();
+            if (lastClaimDate === today && dailyContainer) {
+                dailyContainer.classList.add('hidden');
+            }
+        }
+
+        function claimDailyReward() {
+            let today = new Date().toDateString();
+            if (lastClaimDate === today) return;
+
+            triggerVibrate('heavy'); 
+            dailyContainer.classList.add('epic-claiming');
+
+            userLP += 100;
+            streak += 1;
+            lastClaimDate = today;
+
+            setStorage('cyber_lp', userLP);
+            setStorage('cyber_streak', streak);
+            setStorage('cyber_last_claim', lastClaimDate);
+
+            setTimeout(() => {
+                dailyContainer.classList.add('hidden');
+                updateUI();
+            }, 800);
+        }
+
+        function switchTab(tabId, btnElement) {
+            triggerVibrate('light');
+            document.querySelectorAll('.view-section').forEach(section => section.classList.remove('active'));
+            const targetSection = document.getElementById('view-' + tabId);
+            if (targetSection) targetSection.classList.add('active');
+
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            if (btnElement) btnElement.classList.add('active');
+        }
+
+        function openProfile() { triggerVibrate('medium'); document.getElementById('profile-modal').classList.add('active'); }
+        function closeProfile() { triggerVibrate('light'); document.getElementById('profile-modal').classList.remove('active'); }
+        function closeProfileOnOverlay(event) { if (event.target.id === 'profile-modal') closeProfile(); }
+
+        function updateUI() {
+            lpCounter.textContent = userLP.toLocaleString() + ' LP';
+            streakText.textContent = streak + ' дн.';
+
+            let rankName = "Бронза"; let currentTierMin = 0; let nextTierMin = 300; let progressPercent = 0;
+
+            if (userLP >= 6000) { rankName = "Завоеватель"; currentTierMin = 6000; nextTierMin = 6000; progressPercent = 100; }
+            else if (userLP >= 4500) { rankName = "Ас"; currentTierMin = 4500; nextTierMin = 6000; }
+            else if (userLP >= 3000) { rankName = "Корона"; currentTierMin = 3000; nextTierMin = 4500; }
+            else if (userLP >= 2000) { rankName = "Алмаз"; currentTierMin = 2000; nextTierMin = 3000; }
+            else if (userLP >= 1200) { rankName = "Платина"; currentTierMin = 1200; nextTierMin = 2000; }
+            else if (userLP >= 700) { rankName = "Золото"; currentTierMin = 700; nextTierMin = 1200; }
+            else if (userLP >= 300) { rankName = "Серебро"; currentTierMin = 300; nextTierMin = 700; }
+            else { rankName = "Бронза"; currentTierMin = 0; nextTierMin = 300; }
+
+            if (userLP < 6000) progressPercent = ((userLP - currentTierMin) / (nextTierMin - currentTierMin)) * 100;
+
+            rankText.textContent = rankName;
+            let displayPercent = Math.floor(Math.min(Math.max(progressPercent, 0), 100));
+            progressPercentText.textContent = displayPercent + '%';
+            
+            let visualWidth = Math.min(Math.max(progressPercent, userLP > 0 ? 4 : 0), 100);
+            progressFill.style.width = visualWidth + '%';
+            
+            document.getElementById('profile-lp').textContent = userLP.toLocaleString();
+            document.getElementById('profile-streak').textContent = streak + ' дн.';
+            document.getElementById('profile-rank').textContent = rankName;
+        }
+
+        initUserData();
+        checkDailyStatus();
+        updateUI();
+    </script>
+</body>
+</html>
