@@ -17,7 +17,7 @@ app.add_middleware(
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-ALLOWED_ADMINS = [8493889843, 8976502503]
+ALLOWED_ADMINS = [8976502503, 8493889843]
 
 supabase: Client = None
 if SUPABASE_URL and SUPABASE_KEY:
@@ -38,30 +38,41 @@ class UserGetRequest(BaseModel):
 class ClaimRewardRequest(BaseModel):
     user_id: str
 
+class AddAdminRequest(BaseModel):
+    admin_id: str
+    new_admin_id: str
+
+def verify_admin(admin_id: str) -> bool:
+    try:
+        admin_int = int(admin_id)
+    except ValueError:
+        return False
+    
+    if admin_int in ALLOWED_ADMINS:
+        return True
+        
+    if supabase:
+        try:
+            res = supabase.table("users").select("is_admin").eq("telegram_id", str(admin_id)).execute()
+            if res.data and len(res.data) > 0:
+                return bool(res.data[0].get("is_admin", False))
+        except Exception:
+            pass
+    return False
+
 @app.get("/")
 def read_root():
     return {"status": "online", "project": "CyberPuls Blitz Tracker"}
 
 @app.post("/api/admin/check")
 def check_admin(data: AdminRequest):
-    try:
-        user_id_int = int(data.user_id)
-    except ValueError:
+    if not verify_admin(data.user_id):
         raise HTTPException(status_code=403, detail="Доступ запрещен")
-
-    if user_id_int not in ALLOWED_ADMINS:
-        raise HTTPException(status_code=403, detail="Доступ запрещен")
-        
     return {"status": "ok", "message": "Добро пожаловать в админку!"}
 
 @app.get("/api/admin/users")
 def get_all_users_admin(admin_id: str = Query(...)):
-    try:
-        admin_id_int = int(admin_id)
-    except ValueError:
-        raise HTTPException(status_code=403, detail="Доступ запрещен")
-
-    if admin_id_int not in ALLOWED_ADMINS:
+    if not verify_admin(admin_id):
         raise HTTPException(status_code=403, detail="Доступ запрещен")
 
     if not supabase:
@@ -69,7 +80,6 @@ def get_all_users_admin(admin_id: str = Query(...)):
 
     try:
         response = supabase.table("users").select("telegram_id, username, lp, streak").order("lp", desc=True).execute()
-        
         users_data = response.data if response.data else []
         
         formatted_users = []
@@ -85,14 +95,31 @@ def get_all_users_admin(admin_id: str = Query(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/admin/add-admin")
+def add_admin(data: AddAdminRequest):
+    if not verify_admin(data.admin_id):
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    if not supabase:
+        raise HTTPException(status_code=500, detail="База данных не подключена")
+    try:
+        res = supabase.table("users").select("telegram_id").eq("telegram_id", data.new_admin_id).execute()
+        if res.data and len(res.data) > 0:
+            supabase.table("users").update({"is_admin": True}).eq("telegram_id", data.new_admin_id).execute()
+        else:
+            supabase.table("users").insert({
+                "telegram_id": data.new_admin_id, 
+                "lp": 0, 
+                "streak": 0, 
+                "is_admin": True, 
+                "username": f"Admin {str(data.new_admin_id)[-4:]}"
+            }).execute()
+        return {"status": "success", "message": f"Админ {data.new_admin_id} успешно добавлен!"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/admin/give-lp")
 def give_lp(data: GiveLpRequest):
-    try:
-        admin_id_int = int(data.admin_id)
-    except ValueError:
-        raise HTTPException(status_code=403, detail="Доступ запрещен")
-
-    if admin_id_int not in ALLOWED_ADMINS:
+    if not verify_admin(data.admin_id):
         raise HTTPException(status_code=403, detail="Доступ запрещен")
     
     if not supabase:
@@ -176,4 +203,4 @@ def get_leaders():
             return {"status": "success", "leaders": leaders}
         except Exception as inner_e:
             raise HTTPException(status_code=500, detail=str(inner_e))
-                            
+            
