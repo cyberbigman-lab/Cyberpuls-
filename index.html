@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CyberPuls - Blitz Tracker</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #020308;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* КОСМОС И ЗВЕЗДНОЕ НЕБО */
+        .space-background {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 40%, rgba(25, 12, 40, 0.85) 0%, rgba(2, 3, 8, 0.99) 85%);
+            z-index: -3; overflow: hidden;
+        }
+
+        .stars-layer {
+            position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background-image: 
+                radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+                radial-gradient(1.5px 1.5px at 40px 70px, rgba(0, 242, 254, 0.9), rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 90px 40px, #ffffff, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 130px 150px, rgba(255, 150, 100, 0.8), rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 160px 110px, #ffffff, rgba(0,0,0,0)),
+                radial-gradient(1.5px 1.5px at 200px 220px, #ffffff, rgba(0,0,0,0));
+            background-repeat: repeat; background-size: 220px 220px; opacity: 0.6;
+            animation: twinkleStars 120s linear infinite;
+            will-change: transform;
+        }
+
+        @keyframes twinkleStars { 
+            0% { transform: translateY(0) translateZ(0); } 
+            100% { transform: translateY(50%) translateZ(0); } 
+        }
+
+        /* СПИРАЛЬНОЕ ПОГЛОЩЕНИЕ ЗВЕЗД (ПРИ ОБНОВЛЕНИИ) */
+        .stars-layer.absorbing {
+            animation: spiralIntoHole 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+        }
+        @keyframes spiralIntoHole {
+            0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.6; }
+            100% { transform: translateY(0) rotate(720deg) scale(0.1); opacity: 0; }
+        }
+
+        /* КОНТЕЙНЕР ВСЕЛЕННОЙ */
+        .universe-wrapper {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            padding-bottom: 5vh; 
+            z-index: 2; pointer-events: auto; 
+        }
+
+        .interstellar-universe {
+            position: relative; 
+            width: 380px; height: 380px;
+            pointer-events: auto; 
+        }
+
+        .interstellar-universe::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 242, 254, 0);
+            box-shadow: 0 0 0 rgba(0, 242, 254, 0);
+            pointer-events: none;
+            z-index: 2;
+        }
+        .interstellar-universe.shockwave::after {
+            animation: rippleEffect 0.7s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+        }
+        @keyframes rippleEffect {
+            0% { width: 50px; height: 50px; border-color: rgba(0, 242, 254, 1); box-shadow: 0 0 25px rgba(0, 242, 254, 0.9); opacity: 1; }
+            100% { width: 380px; height: 380px; border-color: rgba(0, 242, 254, 0); box-shadow: 0 0 60px rgba(0, 242, 254, 0); opacity: 0; }
+        }
+
+        /* ЧЕРНАЯ ДЫРА */
+        .black-hole-image {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('bg.jpg'); background-size: cover; background-position: center;
+            background-repeat: no-repeat; mask-image: radial-gradient(circle, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 70%);
+            -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 70%);
+            z-index: 3; 
+            pointer-events: auto !important; cursor: pointer;
+            animation: pulseHole 6s ease-in-out infinite, breathGlow 4s ease-in-out infinite alternate;
+            will-change: transform, filter;
+            transition: transform 0.1s ease, filter 0.1s ease;
+        }
+
+        .black-hole-image:active {
+            transform: scale(0.96);
+            filter: brightness(1.4) drop-shadow(0 0 20px rgba(0, 242, 254, 0.8));
+        }
+
+        @keyframes pulseHole { 
+            0%, 100% { transform: scale3d(1, 1, 1); } 
+            50% { transform: scale3d(1.03, 1.03, 1.03); } 
+        }
+
+        @keyframes breathGlow {
+            0% { filter: brightness(0.95) drop-shadow(0 0 10px rgba(0, 242, 254, 0.2)); }
+            100% { filter: brightness(1.15) drop-shadow(0 0 25px rgba(0, 242, 254, 0.5)); }
+        }
+
+        .black-hole-image.pulse-shockwave {
+            animation: shockwaveRipple 0.8s ease-out forwards;
+        }
+        @keyframes shockwaveRipple {
+            0% { transform: scale3d(1, 1, 1); filter: brightness(1) drop-shadow(0 0 10px rgba(0, 242, 254, 0.3)); }
+            35% { transform: scale3d(1.12, 1.12, 1.12); filter: brightness(2.2) drop-shadow(0 0 60px rgba(0, 242, 254, 1)); }
+            100% { transform: scale3d(1, 1, 1); filter: brightness(1) drop-shadow(0 0 15px rgba(0, 242, 254, 0.4)); }
+        }
+
+        /* УЛЬТРАПЛАВНЫЙ КОРАБЛЬ */
+        .spaceship {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 66px; height: 66px;
+            margin-top: -33px; margin-left: -33px;
+            z-index: 20;
+            pointer-events: auto !important; cursor: pointer;
+            will-change: transform;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+
+        .spaceship-model {
+            width: 100%; height: 100%;
+            background-image: url('ship.png'); 
+            background-size: contain; background-position: center; background-repeat: no-repeat;
+            scale: 1; 
+            transition: scale 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            will-change: scale;
+            pointer-events: auto !important;
+        }
+
+        .spaceship.hyperjump .spaceship-model {
+            scale: 1.5;
+        }
+
+        /* UI И ШАПКА */
+        .header { position: relative; z-index: 10; padding: 14px 20px 6px 20px; display: flex; justify-content: center; width: 100%; flex-shrink: 0; }
+        .user-card { background: transparent; border: none; border-radius: 0; padding: 4px 10px; display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 400px; }
+        .username { font-weight: 800; font-size: 15px; letter-spacing: 1.2px; color: #f8fafc; text-shadow: 0 0 10px rgba(0, 242, 254, 0.5); }
+        .balance-badge { display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, rgba(0, 242, 254, 0.2) 0%, rgba(79, 70, 229, 0.2) 100%); border: 1px solid rgba(0, 242, 254, 0.5); padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 14px; color: #00f2fe; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
+        .profile-icon { width: 34px; height: 34px; background: linear-gradient(135deg, rgba(0, 242, 254, 0.25), rgba(79, 70, 229, 0.35)); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #00f2fe; border: 1px solid rgba(0, 242, 254, 0.5); box-shadow: 0 0 12px rgba(0, 242, 254, 0.3); cursor: pointer; transition: transform 0.2s; }
+        .profile-icon:active { transform: scale(0.9); }
+        
+        .info-strip { position: relative; z-index: 10; display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 400px; margin: 0 auto; padding: 0 24px; font-size: 12px; color: #94a3b8; flex-shrink: 0; }
+        .info-item { display: flex; align-items: center; gap: 4px; }
+        .info-value { color: #fff; font-weight: 600; }
+
+        /* Живой огонь для серии */
+        .live-flame {
+            display: inline-block;
+            animation: flameFlicker 1.5s ease-in-out infinite alternate;
+            filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.8));
+        }
+        @keyframes flameFlicker {
+            0% { transform: scale(1) rotate(-3deg); filter: drop-shadow(0 0 4px rgba(249, 115, 22, 0.6)); }
+            50% { transform: scale(1.15) rotate(3deg); filter: drop-shadow(0 0 12px rgba(249, 115, 22, 1)); }
+            100% { transform: scale(1.05) rotate(-1deg); filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.8)); }
+        }
+
+        /* Подсветка ранга */
+        #rank-text {
+            color: #00f2fe;
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.6);
+            animation: rankGlow 3s ease-in-out infinite alternate;
+        }
+        @keyframes rankGlow {
+            0% { text-shadow: 0 0 5px rgba(0, 242, 254, 0.4); }
+            100% { text-shadow: 0 0 15px rgba(0, 242, 254, 0.9), 0 0 25px rgba(79, 70, 229, 0.5); }
+        }
+
+        /* ПРОГРЕСС-БАР */
+        .progress-bar-container { position: relative; z-index: 10; width: 100%; max-width: 400px; margin: 6px auto 0 auto; padding: 0 24px; flex-shrink: 0; display: flex; align-items: center; gap: 10px; }
+        .progress-bar-bg { flex: 1; height: 6px; background: rgba(10, 15, 30, 0.9); border-radius: 4px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.08); }
+        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #00f2fe, #4f46e5); width: 0%; transition: width 0.5s ease; box-shadow: 0 0 15px rgba(0, 242, 254, 0.9); animation: neonBarPulse 2s ease-in-out infinite alternate; }
+        @keyframes neonBarPulse {
+            0% { box-shadow: 0 0 8px rgba(0, 242, 254, 0.6); }
+            100% { box-shadow: 0 0 20px rgba(0, 242, 254, 1), 0 0 30px rgba(79, 70, 229, 0.7); }
+        }
+        .progress-percent { font-size: 11px; font-weight: 700; color: #00f2fe; min-width: 32px; text-align: right; text-shadow: 0 0 8px rgba(0, 242, 254, 0.5); }
+
+        /* КОНТЕЙНЕР РАЗДЕЛОВ */
+        .main-content {
+            position: relative; z-index: 10; flex: 1; width: 100%; overflow: hidden; 
+            pointer-events: auto; 
+        }
+
+        .view-section {
+            display: none;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            position: absolute;
+            top: 0; left: 0;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: auto;
+        }
+        .view-section.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto; 
+            position: relative;
+        }
+
+        #view-main { padding-top: 35px; }
+
+        /* ЕЖЕДНЕВНАЯ НАГРАДА */
+        .daily-reward-container { 
+            margin: 0 auto; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            position: relative;
+            z-index: 999; 
+            max-width: 400px; 
+            pointer-events: auto !important;
+        }
+        .daily-reward-card { 
+            background: linear-gradient(135deg, rgba(16, 26, 56, 0.95) 0%, rgba(6, 11, 26, 0.98) 100%); 
+            border: 2px solid #00f2fe; 
+            border-radius: 28px; 
+            padding: 22px 40px; 
+            cursor: pointer; 
+            pointer-events: auto !important;
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.6), inset 0 0 15px rgba(0, 242, 254, 0.3); 
+            animation: neonPulse 2s ease-in-out infinite alternate; 
+            transition: transform 0.1s ease; 
+            z-index: 1000;
+        }
+        .daily-reward-card:active { transform: scale(0.95); }
+        @keyframes neonPulse { 0% { box-shadow: 0 0 15px rgba(0, 242, 254, 0.3), inset 0 0 10px rgba(0, 242, 254, 0.1); border-color: rgba(0, 242, 254, 0.6); } 100% { box-shadow: 0 0 35px rgba(0, 242, 254, 0.9), inset 0 0 20px rgba(0, 242, 254, 0.5); border-color: #00f2fe; } }
+        .daily-reward-container.epic-claiming { pointer-events: none; animation: epicExplosion 0.8s ease-out forwards; }
+        @keyframes epicExplosion { 0% { transform: scale(1); filter: brightness(1); opacity: 1; } 40% { transform: scale(1.15); filter: brightness(1.8); opacity: 1; } 80% { transform: scale(1.4); filter: brightness(2.5); opacity: 0.8; } 100% { transform: scale(2); filter: brightness(4); opacity: 0; } }
+        .reward-icon-text { font-size: 26px; font-weight: 800; color: #00f2fe; text-shadow: 0 0 15px rgba(0, 242, 254, 0.9); margin-bottom: 4px; text-align: center; }
+        .reward-action-label { font-size: 14px; font-weight: 700; color: #cbd5e1; letter-spacing: 0.5px; text-align: center;}
+        .daily-reward-subtext { color: #ffffff; font-size: 13px; font-weight: 600; margin-top: 14px; text-shadow: 0 0 8px rgba(255, 255, 255, 0.6); letter-spacing: 0.5px; text-align: center;}
+
+        /* 3D КАРТОЧКИ */
+        .cyber-card-3d {
+            background: linear-gradient(135deg, rgba(16, 26, 56, 0.85) 0%, rgba(6, 11, 26, 0.95) 100%);
+            border: 2px solid rgba(0, 242, 254, 0.5); border-radius: 30px; padding: 34px 26px; max-width: 340px; width: 100%;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.85), 0 0 40px rgba(0, 242, 254, 0.2); backdrop-filter: blur(25px); position: relative; margin: 30px auto; text-align: center;
+        }
+        .cyber-card-3d::before { content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 2px; background: linear-gradient(90deg, transparent, rgba(0, 242, 254, 1), transparent); border-radius: 50%; box-shadow: 0 0 10px #00f2fe; }
+        .card-icon-container-3d { width: 76px; height: 76px; margin: 0 auto 20px auto; background: linear-gradient(135deg, rgba(0, 242, 254, 0.15) 0%, rgba(79, 70, 229, 0.25) 100%); border: 2px solid rgba(0, 242, 254, 0.5); border-radius: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 12px 30px rgba(0, 242, 254, 0.3); }
+        .card-svg-icon { width: 32px; height: 32px; stroke: #00f2fe; stroke-width: 2; fill: none; filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.7)); }
+        .card-title-3d { font-size: 20px; font-weight: 800; color: #00f2fe; margin-bottom: 12px; letter-spacing: 1px; text-shadow: 0 0 15px rgba(0, 242, 254, 0.6); }
+        .card-desc-3d { font-size: 14px; color: #94a3b8; line-height: 1.6; font-weight: 400; }
+
+        /* ================= МАГАЗИН (ВКЛАДКИ) ================= */
+        .shop-tabs-container {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 0 auto 16px auto;
+            max-width: 400px;
+            width: 100%;
+        }
+        .shop-tab-btn {
+            flex: 1;
+            background: rgba(10, 15, 30, 0.6);
+            border: 1px solid rgba(0, 242, 254, 0.2);
+            color: #94a3b8;
+            padding: 10px 6px;
+            border-radius: 14px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .shop-tab-btn.active {
+            background: rgba(0, 242, 254, 0.15);
+            border-color: #00f2fe;
+            color: #00f2fe;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+            text-shadow: 0 0 8px rgba(0, 242, 254, 0.6);
+        }
+        .shop-tab-pane {
+            display: none;
+            width: 100%;
+        }
+        .shop-tab-pane.active {
+            display: block;
+        }
+        .shop-empty-panel {
+            background: rgba(16, 26, 56, 0.6);
+            border: 1px dashed rgba(0, 242, 254, 0.3);
+            border-radius: 20px;
+            padding: 40px 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            margin: 0 auto;
+            max-width: 340px;
+        }
+        .shop-item-placeholder {
+            color: #94a3b8;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* ================= АДМИН-ПАНЕЛЬ (ОВЕРЛЕЙ) ================= */
+        .admin-overlay-section {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 3, 8, 0.95); backdrop-filter: blur(15px);
+            z-index: 150; display: none; padding: 20px; overflow-y: auto;
+            pointer-events: auto;
+        }
+        .admin-overlay-section.active { display: block; }
+
+        .admin-header-box { margin: 0 auto 20px auto; width: 100%; max-width: 400px; display: flex; justify-content: space-between; align-items: center; }
+        .admin-title { font-size: 20px; font-weight: 900; color: #f43f5e; text-shadow: 0 0 15px rgba(244, 63, 94, 0.7); letter-spacing: 2px; }
+        .admin-close { background: transparent; border: 1px solid #f43f5e; color: #f43f5e; padding: 4px 12px; border-radius: 12px; font-size: 12px; cursor: pointer; }
+        
+        .admin-module {
+            background: rgba(10, 15, 30, 0.85); border: 1px solid rgba(244, 63, 94, 0.4); border-radius: 20px; padding: 16px; margin: 0 auto 16px auto; width: 100%; max-width: 400px; text-align: left; box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px);
+        }
+        .admin-module-title { font-size: 13px; color: #f43f5e; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; border-bottom: 1px solid rgba(244, 63, 94, 0.2); padding-bottom: 6px; display: flex; align-items: center; gap: 8px;}
+        .admin-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .admin-stat-card { background: rgba(0,0,0,0.3); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.05); }
+        .admin-stat-val { font-size: 16px; font-weight: 800; color: #fff; }
+        .admin-stat-lbl { font-size: 10px; color: #94a3b8; }
+        .admin-input-group { display: flex; gap: 8px; margin-bottom: 10px; }
+        .admin-input { flex: 1; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 10px 12px; border-radius: 10px; font-size: 13px; outline: none; }
+        .admin-input:focus { border-color: #f43f5e; }
+        .admin-btn { background: rgba(244, 63, 94, 0.15); border: 1px solid #f43f5e; color: #f43f5e; padding: 10px 16px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.2s; white-space: nowrap; }
+        .admin-btn:active { transform: scale(0.95); background: #f43f5e; color: #fff; }
+        .admin-btn.danger { background: rgba(255, 0, 0, 0.1); border-color: red; color: red; }
+        .admin-switch-row { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 10px 12px; border-radius: 10px; margin-bottom: 10px; }
+        .admin-switch-lbl { font-size: 13px; color: #cbd5e1; font-weight: 600; }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #f43f5e; }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Элементы списка пользователей в админке */
+        .admin-user-item {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(244, 63, 94, 0.2);
+            padding: 10px 12px; border-radius: 10px; cursor: pointer; transition: all 0.2s ease;
+        }
+        .admin-user-item:hover {
+            background: rgba(244, 63, 94, 0.15); border-color: rgba(244, 63, 94, 0.6); transform: translateX(2px);
+        }
+        .admin-user-info { display: flex; flex-direction: column; }
+        .admin-user-name { font-size: 13px; font-weight: 700; color: #fff; }
+        .admin-user-sub { font-size: 10px; color: #94a3b8; }
+        .admin-user-lp { font-size: 12px; font-weight: 800; color: #00f2fe; }
+
+        /* Распорка для скролла */
+        .bottom-spacer { height: 150px; width: 100%; display: block; flex-shrink: 0; }
+
+        /* НАВИГАЦИЯ (МИНИМАЛИСТИЧНАЯ БЕЗ РАМОК) */
+        .nav-container-wrapper { position: relative; z-index: 10; padding: 20px 16px; display: flex; justify-content: center; width: 100%; background: transparent; flex-shrink: 0; pointer-events: auto; }
+        .nav-bar { display: flex; justify-content: space-around; align-items: center; width: 100%; max-width: 400px; gap: 12px; }
+        .nav-item { 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            background: transparent; border: none; box-shadow: none;
+            color: #64748b; font-size: 9px; font-weight: 700; cursor: pointer; 
+            width: 72px; height: 72px; 
+            transition: transform 0.2s, color 0.3s; 
+            animation: floatNav 3.5s ease-in-out infinite; 
+        }
+        .nav-item:active { transform: scale(0.92); }
+        .nav-item:nth-child(1) { animation-delay: 0s; } .nav-item:nth-child(2) { animation-delay: 0.8s; } .nav-item:nth-child(3) { animation-delay: 1.4s; } .nav-item:nth-child(4) { animation-delay: 0.4s; }
+        @keyframes floatNav { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-6px); } }
+        
+        .nav-svg { width: 22px; height: 22px; stroke: #64748b; stroke-width: 2; fill: none; margin-bottom: 3px; transition: all 0.3s ease; }
+        
+        .nav-item.active { 
+            color: #00f2fe; 
+            background: transparent; 
+            border: none; 
+            box-shadow: none; 
+            animation: floatActiveNav 3s ease-in-out infinite; 
+        }
+        @keyframes floatActiveNav { 0%, 100% { transform: translateY(-4px); } 50% { transform: translateY(-10px); } }
+        
+        .nav-item.active .nav-svg { 
+            stroke: #00f2fe; 
+            filter: drop-shadow(0 0 10px rgba(0, 242, 254, 0.9)); 
+            transform: scale(1.15); 
+        }
+        
+        /* МОДАЛКА ПРОФИЛЯ */
+        .profile-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(2, 3, 8, 0.8); backdrop-filter: blur(10px); z-index: 100; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .profile-modal-overlay.active { opacity: 1; pointer-events: all; }
+        .profile-modal-content { width: 100%; max-width: 450px; background: linear-gradient(180deg, rgba(16, 26, 56, 0.95) 0%, rgba(6, 11, 26, 1) 100%); border-top: 2px solid rgba(0, 242, 254, 0.5); border-radius: 30px 30px 0 0; padding: 30px 20px 40px 20px; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 -10px 40px rgba(0, 242, 254, 0.15); position: relative; }
+        .profile-modal-overlay.active .profile-modal-content { transform: translateY(0); }
+        .close-profile-btn { position: absolute; top: 15px; right: 20px; background: rgba(255, 255, 255, 0.1); border: none; color: #94a3b8; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: all 0.2s; }
+        .close-profile-btn:active { background: rgba(255, 255, 255, 0.2); transform: scale(0.9); }
+        .profile-header-large { display: flex; flex-direction: column; align-items: center; margin-bottom: 24px; }
+        .profile-avatar-large { width: 70px; height: 70px; background: linear-gradient(135deg, rgba(0, 242, 254, 0.2), rgba(79, 70, 229, 0.4)); border: 2px solid #00f2fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 0 20px rgba(0, 242, 254, 0.4); margin-bottom: 12px; }
+        .profile-name-large { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0, 242, 254, 0.5); margin-bottom: 4px; text-align: center; }
+        .profile-id { font-size: 12px; color: #64748b; font-weight: 500; }
+        .profile-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+        .stat-box { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; align-items: flex-start; }
+        .stat-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .stat-value { font-size: 18px; font-weight: 700; }
+        .text-cyan { color: #00f2fe; text-shadow: 0 0 8px rgba(0, 242, 254, 0.4); } .text-orange { color: #f97316; text-shadow: 0 0 8px rgba(249, 115, 22, 0.4); } .text-purple { color: #a855f7; text-shadow: 0 0 8px rgba(168, 85, 247, 0.4); } .text-white { color: #fff; }
+        
+        .profile-actions { display: flex; flex-direction: column; gap: 10px; }
+        .action-btn { width: 100%; background: rgba(0, 242, 254, 0.1); border: 1px solid rgba(0, 242, 254, 0.3); color: #00f2fe; padding: 14px; border-radius: 12px; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s; }
+        .action-btn:active { transform: scale(0.97); background: rgba(0, 242, 254, 0.2); }
+        .action-btn.secondary { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #cbd5e1; }
+
+        /* ================= МОДАЛКА ПРАВИЛ LP (ИНТЕРСТЕЛЛАР) ================= */
+        .info-icon {
+            width: 24px; height: 24px; border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.4); color: rgba(255, 255, 255, 0.8);
+            display: flex; justify-content: center; align-items: center;
+            font-family: serif; font-style: italic; font-size: 14px;
+            cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+        .info-icon:active { transform: scale(0.9); }
+        .info-icon:hover {
+            background: rgba(255, 255, 255, 0.2); color: #fff; border-color: #fff;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        .interstellar-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: opacity 0.4s ease, visibility 0.4s ease;
+            z-index: 1005;
+        }
+        .interstellar-modal-overlay.active { opacity: 1; visibility: visible; }
+
+        .interstellar-info-card {
+            background: rgba(15, 15, 25, 0.7); border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px; padding: 25px; width: 90%; max-width: 400px; color: #fff;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8), 0 0 20px rgba(77, 168, 218, 0.2);
+            transform: translateY(20px); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+        .interstellar-modal-overlay.active .interstellar-info-card { transform: translateY(0); }
+
+        .close-btn {
+            position: absolute; top: 15px; right: 20px; font-size: 24px;
+            color: rgba(255, 255, 255, 0.5); cursor: pointer; transition: color 0.3s ease;
+        }
+        .close-btn:hover, .close-btn:active { color: #fff; text-shadow: 0 0 10px #fff; }
+
+        .glow-title {
+            font-size: 1.2rem; margin-bottom: 12px; text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 5px;
+        }
+        .lp-list { list-style: none; padding: 0; margin: 0 0 20px 0; }
+        .lp-list li { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.95rem; color: rgba(255, 255, 255, 0.85); }
+        .lp-value { font-weight: bold; color: #4da8da; text-shadow: 0 0 5px rgba(77, 168, 218, 0.5); }
+
+        .season-reset-box {
+            background: rgba(255, 255, 255, 0.05); border-left: 3px solid #4da8da;
+            padding: 12px; border-radius: 4px; margin-top: 20px;
+        }
+        .season-reset-box h4 { margin: 0 0 8px 0; font-size: 1rem; }
+        .season-reset-box p { margin: 0; font-size: 0.85rem; line-height: 1.4; color: rgba(255, 255, 255, 0.7); }
+
+        /* ТАЙМЕР */
+        .countdown-container {
+            display: flex; justify-content: center; align-items: center; margin-top: 15px; padding: 12px;
+            background: rgba(0, 0, 0, 0.4); border-radius: 8px; border: 1px solid rgba(77, 168, 218, 0.3);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
+        }
+        .timer-box { display: flex; flex-direction: column; align-items: center; min-width: 45px; }
+        .timer-digits { font-family: 'Courier New', Courier, monospace; font-size: 1.4rem; font-weight: bold; color: #4da8da; text-shadow: 0 0 8px rgba(77, 168, 218, 0.8); line-height: 1; }
+        .timer-label { font-size: 0.65rem; color: rgba(255, 255, 255, 0.5); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+        .timer-separator { font-size: 1.2rem; color: rgba(77, 168, 218, 0.5); margin: 0 5px; transform: translateY(-8px); animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    </style>
+</head>
+<body>
+
+    <div class="space-background">
+        <div class="stars-layer" id="starsLayer"></div>
+    </div>
+
+    <!-- КОНТЕЙНЕР ВСЕЛЕННОЙ -->
+    <div class="universe-wrapper">
+        <div class="interstellar-universe" id="universeContainer">
+            <!-- ЧЕРНАЯ ДЫРА -->
+            <div class="black-hole-image" id="blackHoleImg"></div>
+            <div class="spaceship" id="endurance-ship">
+                <div class="spaceship-model"></div>
+            </div>
+        </div>
+    </div>
+
+    <header class="header">
+        <div class="user-card">
+            <div class="username" id="main-username">CYBERPULS</div>
+            <div class="balance-badge">
+                <span>⚡</span>
+                <span id="lp-counter">0 LP</span>
+            </div>
+            <div class="profile-icon" onclick="openProfile()">👤</div>
+        </div>
+    </header>
+
+    <div class="info-strip">
+        <div class="info-item"><span><span class="live-flame">🔥</span> Серия:</span><span class="info-value" id="streak-text">0 дней</span></div>
+        <div class="info-item"><span>🏆 Ранг:</span><span class="info-value" id="rank-text">Бронза</span></div>
+    </div>
+    
+    <div class="progress-bar-container">
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
+        <span class="progress-percent" id="progress-percent-text">0%</span>
+    </div>
+
+    <!-- КОНТЕЙНЕР РАЗДЕЛОВ (С ЖЕСТАМИ СВАЙПА И ПЛАВНЫМ ПЕРЕХОДОМ) -->
+    <main class="main-content" id="mainContentArea">
+        <!-- ГЛАВНАЯ -->
+        <div class="view-section active" id="view-main">
+            <div class="daily-reward-container" id="daily-container">
+                <div class="daily-reward-card" onclick="claimDailyReward()">
+                    <div class="reward-icon-text">⚡ +100 LP</div>
+                    <div class="reward-action-label">ЗАБРАТЬ</div>
+                </div>
+                <div class="daily-reward-subtext">награда за ежедневный вход</div>
+            </div>
+        </div>
+
+        <!-- СЕССИИ -->
+        <div class="view-section" id="view-sessions">
+            <div class="cyber-card-3d">
+                <div class="card-icon-container-3d">
+                    <svg class="card-svg-icon" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                </div>
+                <div class="card-title-3d">История сессий</div>
+                <div class="card-desc-3d">Логирование активности и детальная статистика начислений LP появятся в следующем системном апдейте.</div>
+            </div>
+            <div class="bottom-spacer"></div>
+        </div>
+
+        <!-- МАГАЗИН (ВКЛАДКИ) -->
+        <div class="view-section" id="view-tournaments">
+            <div class="shop-tabs-container">
+                <button class="shop-tab-btn active" onclick="switchShopTab('rental', this)">Аренда</button>
+                <button class="shop-tab-btn" onclick="switchShopTab('common', this)">Обычные скины</button>
+                <button class="shop-tab-btn" onclick="switchShopTab('premium', this)">Дорогие скины</button>
+            </div>
+
+            <div class="shop-tab-pane active" id="shop-tab-rental">
+                <div class="shop-empty-panel">
+                    <div class="shop-item-placeholder">⚡ Доступные слоты аренды пусты</div>
+                </div>
+            </div>
+            <div class="shop-tab-pane" id="shop-tab-common">
+                <div class="shop-empty-panel">
+                    <div class="shop-item-placeholder">🛡️ Обычные скины не обнаружены</div>
+                </div>
+            </div>
+            <div class="shop-tab-pane" id="shop-tab-premium">
+                <div class="shop-empty-panel">
+                    <div class="shop-item-placeholder">👑 Легендарные скины загружаются...</div>
+                </div>
+            </div>
+            <div class="bottom-spacer"></div>
+        </div>
+
+        <!-- ЛИДЕРЫ -->
+        <div class="view-section" id="view-leaders">
+            <div class="admin-header-box" style="margin-bottom: 12px; justify-content: center; position: relative;">
+                <div class="admin-title" style="color: #00f2fe; text-shadow: 0 0 15px rgba(0, 242, 254, 0.7);">ТОП ЛИДЕРОВ</div>
+                <div class="info-icon" id="lpInfoBtn" style="position: absolute; right: 0;">i</div>
+            </div>
+
+            <div id="leaders-list-container" style="display: flex; flex-direction: column; gap: 10px; max-width: 400px; margin: 0 auto;">
+                <div style="text-align: center; color: #94a3b8; padding: 20px;">Загрузка рейтинга...</div>
+            </div>
+            <div class="bottom-spacer"></div>
+        </div>
+    </main>
+
+    <!-- АДМИН-ПАНЕЛЬ (ОВЕРЛЕЙ) -->
+    <div class="admin-overlay-section" id="view-admin">
+        <div class="admin-header-box">
+            <div class="admin-title">ROOT_ACCESS</div>
+            <button class="admin-close" onclick="exitAdmin()">ВЫЙТИ</button>
+        </div>
+
+        <div class="admin-module">
+            <div class="admin-module-title">📊 LIVE АНАЛИТИКА</div>
+            <div class="admin-stats-grid">
+                <div class="admin-stat-card"><div class="admin-stat-lbl">Всего юзеров</div><div class="admin-stat-val">1,204</div></div>
+                <div class="admin-stat-card"><div class="admin-stat-lbl">Онлайн (DAU)</div><div class="admin-stat-val">342</div></div>
+                <div class="admin-stat-card"><div class="admin-stat-lbl">Эмиссия LP</div><div class="admin-stat-val">580.4K</div></div>
+                <div class="admin-stat-card"><div class="admin-stat-lbl">API Lesta (Запросы)</div><div class="admin-stat-val" style="color:#22c55e;">45 / min</div></div>
+            </div>
+        </div>
+
+        <div class="admin-module">
+            <div class="admin-module-title">📋 ВСЕ УЧАСТНИКИ СИСТЕМЫ</div>
+            <div class="admin-input-group" style="margin-bottom: 12px;">
+                <button class="admin-btn" style="width: 100%;" onclick="loadAllUsersForAdmin()">Загрузить / Обновить список</button>
+            </div>
+            <div id="admin-users-list-container" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px;">
+                <div style="font-size: 12px; color: #94a3b8; text-align: center; padding: 10px;">Нажмите кнопку выше, чтобы загрузить список.</div>
+            </div>
+        </div>
+
+        <div class="admin-module">
+            <div class="admin-module-title">👥 МОДЕРАЦИЯ ЮЗЕРА</div>
+            <div class="admin-input-group">
+                <input type="text" id="admin-user-id" class="admin-input" placeholder="ID игрока или Ник">
+            </div>
+            <div class="admin-input-group">
+                <input type="number" id="admin-lp-amount" class="admin-input" placeholder="Сумма LP (+ или -)">
+                <button class="admin-btn" onclick="adminAction('give_lp')">Выдать</button>
+            </div>
+            <div class="admin-input-group">
+                <button class="admin-btn danger" style="width:100%;" onclick="adminAction('ban')">ЗАБЛОКИРОВАТЬ ИГРОКА</button>
+            </div>
+        </div>
+
+        <div class="admin-module">
+            <div class="admin-module-title">🎁 ПРОМОКОДЫ</div>
+            <div class="admin-input-group">
+                <input type="text" id="admin-promo-name" class="admin-input" placeholder="Код (напр. CYBER_500)">
+            </div>
+            <div class="admin-input-group">
+                <input type="number" id="admin-promo-val" class="admin-input" placeholder="Награда LP">
+                <button class="admin-btn" onclick="adminAction('create_promo')">СОЗДАТЬ</button>
+            </div>
+        </div>
+
+        <div class="admin-module">
+            <div class="admin-module-title">⚙️ ГЛОБАЛЬНЫЙ КОНТРОЛЬ</div>
+            <div class="admin-switch-row">
+                <span class="admin-switch-lbl">Технические работы</span>
+                <label class="switch">
+                    <input type="checkbox" id="admin-maintenance" onchange="adminAction('maintenance')">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="admin-input-group" style="margin-top: 15px;">
+                <input type="text" id="admin-alert-msg" class="admin-input" placeholder="Текст пуш-уведомления...">
+            </div>
+            <button class="admin-btn" style="width: 100%;" onclick="adminAction('send_alert')">ОТПРАВИТЬ ВСЕМ</button>
+        </div>
+
+        <div class="admin-module">
+            <div class="admin-module-title">👑 УПРАВЛЕНИЕ АДМИНАМИ</div>
+            <div class="admin-input-group">
+                <input type="number" id="admin-new-id" class="admin-input" placeholder="Добавить: Telegram ID">
+                <button class="admin-btn" onclick="addAdminId()">Добавить</button>
+            </div>
+            <div class="admin-input-group">
+                <input type="number" id="admin-remove-id" class="admin-input" placeholder="Удалить: Telegram ID">
+                <button class="admin-btn danger" onclick="removeAdminByIdInput()">Удалить</button>
+            </div>
+            <div id="admins-list" style="font-size: 12px; color: #94a3b8; margin-top: 10px; line-height: 1.5;"></div>
+        </div>
+        
+        <div class="bottom-spacer"></div>
+    </div>
+
+    <div class="nav-container-wrapper">
+        <nav class="nav-bar" id="nav-bar">
+            <button class="nav-item active" onclick="switchTab('main', this)">
+                <svg class="nav-svg" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span>Главная</span>
+            </button>
+            <button class="nav-item" onclick="switchTab('sessions', this)">
+                <svg class="nav-svg" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                <span>Сессии</span>
+            </button>
+            <button class="nav-item" onclick="switchTab('tournaments', this)">
+                <svg class="nav-svg" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>
+                <span>Магазин</span>
+            </button>
+            <button class="nav-item" onclick="switchTab('leaders', this)">
+                <svg class="nav-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span>Лидеры</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- ВСПЛЫВАЮЩЕЕ ОКНО ПРОФИЛЯ -->
+    <div class="profile-modal-overlay" id="profile-modal" onclick="closeProfileOnOverlay(event)">
+        <div class="profile-modal-content">
+            <button class="close-profile-btn" onclick="closeProfile()">✕</button>
+            <div class="profile-header-large">
+                <div class="profile-avatar-large">👤</div>
+                <div class="profile-name-large" id="profile-name-display">CYBERPULS</div>
+                <div class="profile-id" id="profile-id-display">ID: ---</div>
+            </div>
+            <div class="profile-stats-grid">
+                <div class="stat-box"><div class="stat-label">Всего LP</div><div class="stat-value text-cyan" id="profile-lp">0</div></div>
+                <div class="stat-box"><div class="stat-label">Серия</div><div class="stat-value text-orange" id="profile-streak">0 дн.</div></div>
+                <div class="stat-box"><div class="stat-label">Турниры</div><div class="stat-value text-purple">0</div></div>
+                <div class="stat-box"><div class="stat-label">Ранг</div><div class="stat-value text-white" id="profile-rank">Бронза</div></div>
+            </div>
+            <div class="profile-actions">
+                <button class="action-btn secondary"><span>⚙️</span> Настройки</button>
+                <button id="admin-panel-btn" class="action-btn" style="display: none; background: rgba(244, 63, 94, 0.15); border-color: rgba(244, 63, 94, 0.5); color: #f43f5e;" onclick="openAdminPanelFromProfile()">
+                    <span>👑</span> Терминал ROOT
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО ИНФОРМАЦИИ (ПРАВИЛА И ТАЙМЕР) -->
+    <div id="lpInfoModal" class="interstellar-modal-overlay">
+      <div class="interstellar-info-card">
+        <div class="close-btn" id="closeInfoBtn">&times;</div>
+        
+        <h3 class="glow-title">⚔️ Боевая активность</h3>
+        <ul class="lp-list">
+          <li><span>Победа:</span> <span class="lp-value">50 LP</span></li>
+          <li><span>Поражение:</span> <span class="lp-value">10 LP</span></li>
+          <li><span>Топ-1 по урону:</span> <span class="lp-value">100 LP</span></li>
+        </ul>
+
+        <h3 class="glow-title">🎁 Дополнительная активность</h3>
+        <ul class="lp-list">
+          <li><span>Ежедневный вход:</span> <span class="lp-value">100 LP</span></li>
+          <li><span>3 победы подряд:</span> <span class="lp-value">200 LP</span></li>
+          <li><span>Приглашение друга:</span> <span class="lp-value">100 LP</span></li>
+        </ul>
+
+        <div class="season-reset-box">
+          <h4>🔄 Сезонный сброс</h4>
+          <p>Рейтинг автоматически обнуляется <strong>каждые 30 дней в 00:00</strong>. Таким образом, каждые 30 дней, каждый имеет равные шансы набрать больше очков.</p>
+          
+          <div class="countdown-container">
+            <div class="timer-box"><span id="timer-days" class="timer-digits">00</span><span class="timer-label">дней</span></div>
+            <span class="timer-separator">:</span>
+            <div class="timer-box"><span id="timer-hours" class="timer-digits">00</span><span class="timer-label">часов</span></div>
+            <span class="timer-separator">:</span>
+            <div class="timer-box"><span id="timer-minutes" class="timer-digits">00</span><span class="timer-label">минут</span></div>
+            <span class="timer-separator">:</span>
+            <div class="timer-box"><span id="timer-seconds" class="timer-digits">00</span><span class="timer-label">секунд</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- МОДАЛКА ПРОФИЛЯ ИГРОКА ДЛЯ АДМИНА -->
+    <div class="profile-modal-overlay" id="admin-user-profile-modal" onclick="closeAdminUserProfileOnOverlay(event)">
+        <div class="profile-modal-content">
+            <button class="close-profile-btn" onclick="closeAdminUserProfile()">✕</button>
+            <div class="profile-header-large">
+                <div class="profile-avatar-large">🛡️</div>
+                <div class="profile-name-large" id="admin-modal-username">USER</div>
+                <div class="profile-id" id="admin-modal-userid">ID: ---</div>
+            </div>
+            <div class="profile-stats-grid">
+                <div class="stat-box"><div class="stat-label">Баланс LP</div><div class="stat-value text-cyan" id="admin-modal-lp">0</div></div>
+                <div class="stat-box"><div class="stat-label">Серия входа</div><div class="stat-value text-orange" id="admin-modal-streak">0 дн.</div></div>
+                <div class="stat-box"><div class="stat-label">Статус</div><div class="stat-value text-purple" id="admin-modal-status">Активен</div></div>
+                <div class="stat-box"><div class="stat-label">Ранг</div><div class="stat-value text-white" id="admin-modal-rank">Бронза</div></div>
+            </div>
+            <div class="profile-actions">
+                <button class="action-btn" onclick="quickFillAdminInput()"><span>⚡</span> Быстро выбрать для выдачи LP</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MASTER_ADMIN_ID = 8976502503;
+        const DEFAULT_ADMINS = [8976502503, 8493889843];
+        let currentUserId = MASTER_ADMIN_ID;
+        let currentUserName = "CYBERPULS";
+        let selectedAdminTargetId = "";
+
+        let tg = window.Telegram ? window.Telegram.WebApp : null;
+        try { if (tg) { tg.ready(); tg.expand(); } } catch (e) {}
+
+        function showAlert(msg) {
+            if (tg && tg.showAlert) tg.showAlert(msg);
+            else alert(msg);
+        }
+
+        function getStorage(key, defaultValue) {
+            try { return localStorage.getItem(key) !== null ? localStorage.getItem(key) : defaultValue; } 
+            catch (e) { return defaultValue; }
+        }
+        function setStorage(key, value) { try { localStorage.setItem(key, value); } catch (e) {} }
+
+        function checkMonthlyReset() {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            const savedMonth = getStorage('cyber_lp_month', null);
+            const savedYear = getStorage('cyber_lp_year', null);
+
+            if (savedMonth === null || savedYear === null) {
+                setStorage('cyber_lp_month', currentMonth);
+                setStorage('cyber_lp_year', currentYear);
+            } else if (parseInt(savedMonth) !== currentMonth || parseInt(savedYear) !== currentYear) {
+                setStorage('cyber_lp', '0');
+                setStorage('cyber_lp_month', currentMonth);
+                setStorage('cyber_lp_year', currentYear);
+            }
+        }
+
+        checkMonthlyReset();
+
+        function getExtraAdmins() {
+            try {
+                let val = localStorage.getItem('cyber_extra_admins');
+                return val ? JSON.parse(val) : [];
+            } catch (e) { return []; }
+        }
+        function saveExtraAdmins(admins) {
+            try { localStorage.setItem('cyber_extra_admins', JSON.stringify(admins)); } catch (e) {}
+        }
+
+        // МАКСИМАЛЬНО МЯГКАЯ МИКРО-ВИБРАЦИЯ
+        function triggerVibrate() {
+            try { 
+                if (tg && tg.HapticFeedback) { 
+                    tg.HapticFeedback.impactOccurred('light'); 
+                    return; 
+                } 
+            } catch (e) {}
+            try { 
+                if (navigator.vibrate) { 
+                    navigator.vibrate(3); 
+                } 
+            } catch (e) {}
+        }
+
+        let savedLP = getStorage('cyber_lp', '0');
+        let userLP = parseInt(savedLP);
+        let displayedLP = userLP;
+        let streak = parseInt(getStorage('cyber_streak', '0'));
+        let lastClaimDate = getStorage('cyber_last_claim', '');
+
+        const lpCounter = document.getElementById('lp-counter');
+        const streakText = document.getElementById('streak-text');
+        const rankText = document.getElementById('rank-text');
+        const progressFill = document.getElementById('progress-fill');
+        const progressPercentText = document.getElementById('progress-percent-text');
+        const dailyContainer = document.getElementById('daily-container');
+
+        // Реакция черной дыры при нажатии
+        const blackHoleImg = document.getElementById('blackHoleImg');
+        const universeContainer = document.getElementById('universeContainer');
+        if (blackHoleImg && universeContainer) {
+            blackHoleImg.addEventListener('pointerdown', (event) => {
+                event.stopPropagation();
+                triggerVibrate();
+                blackHoleImg.classList.add('pulse-shockwave');
+                universeContainer.classList.add('shockwave');
+                setTimeout(() => {
+                    blackHoleImg.classList.remove('pulse-shockwave');
+                    universeContainer.classList.remove('shockwave');
+                }, 800);
+            });
+        }
+
+        // Спиральное поглощение звезд при обновлении данных
+        function triggerSpiralAbsorption() {
+            const stars = document.getElementById('starsLayer');
+            if (stars) {
+                stars.classList.add('absorbing');
+                setTimeout(() => {
+                    stars.classList.remove('absorbing');
+                }, 1200);
+            }
+        }
+
+        // Плавный динамический тикер анимации LP
+        function animateLPChange(targetLP) {
+            if (!lpCounter) return;
+            let startLP = displayedLP;
+            let diff = targetLP - startLP;
+            if (diff === 0) {
+                lpCounter.textContent = targetLP.toLocaleString() + ' LP';
+                return;
+            }
+            
+            let duration = 600; 
+            let startTime = null;
+
+            function step(timestamp) {
+                if (!startTime) startTime = timestamp;
+                let progress = Math.min((timestamp - startTime) / duration, 1);
+                let current = Math.floor(startLP + diff * (progress * (2 - progress)));
+                lpCounter.textContent = current.toLocaleString() + ' LP';
+                
+                if (progress < 1) {
+                    requestAnimationFrame(step);
+                } else {
+                    displayedLP = targetLP;
+                    lpCounter.textContent = targetLP.toLocaleString() + ' LP';
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        const ship = document.getElementById('endurance-ship');
+        let orbitAngle = 0;
+        let spinAngle = 0;
+        let speedMultiplier = 1.0;
+
+        function animateShip() {
+            orbitAngle += 0.0035 * speedMultiplier;
+            spinAngle -= 0.015 * speedMultiplier;
+
+            const radius = 140; 
+            const x = Math.cos(orbitAngle) * radius;
+            const y = Math.sin(orbitAngle) * radius;
+
+            if (ship) {
+                ship.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${spinAngle}rad)`;
+            }
+            requestAnimationFrame(animateShip);
+        }
+        requestAnimationFrame(animateShip);
+
+        if (ship) {
+            ship.addEventListener('pointerdown', function(event) {
+                event.stopPropagation();
+                triggerVibrate();
+                ship.classList.add('hyperjump');
+                speedMultiplier = 5.0; 
+
+                setTimeout(() => {
+                    ship.classList.remove('hyperjump');
+                    speedMultiplier = 1.0; 
+                }, 1500);
+            });
+        }
+
+        async function checkAdminAccess(userId) {
+            try {
+                const response = await fetch('https://cyberpuls.onrender.com/api/admin/check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: String(userId) })
+                });
+
+                const data = await response.json();
+                const adminBtn = document.getElementById('admin-panel-btn');
+
+                let extraAdmins = getExtraAdmins();
+                let allAdmins = [MASTER_ADMIN_ID, ...DEFAULT_ADMINS, ...extraAdmins];
+
+                if ((response.ok && data.status === "ok") || allAdmins.includes(Number(userId))) {
+                    adminBtn.style.display = 'flex';
+                } else {
+                    adminBtn.style.display = 'none';
+                }
+            } catch (error) {
+                let extraAdmins = getExtraAdmins();
+                let allAdmins = [MASTER_ADMIN_ID, ...DEFAULT_ADMINS, ...extraAdmins];
+                if (allAdmins.includes(Number(userId))) {
+                    document.getElementById('admin-panel-btn').style.display = 'flex';
+                } else {
+                    document.getElementById('admin-panel-btn').style.display = 'none';
+                }
+            }
+        }
+
+        async function initUserData() {
+            let userId = MASTER_ADMIN_ID; 
+            let userName = "CYBERPULS";
+
+            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                const user = tg.initDataUnsafe.user;
+                userId = user.id;
+                currentUserId = user.id;
+                userName = user.username ? user.username.toUpperCase() : (user.first_name || 'TANKER').toUpperCase();
+            }
+            
+            currentUserName = userName;
+            document.getElementById('main-username').textContent = userName;
+            document.getElementById('profile-name-display').textContent = userName;
+            document.getElementById('profile-id-display').textContent = 'ID: ' + userId;
+
+            try {
+                triggerSpiralAbsorption();
+                let response = await fetch('https://cyberpuls.onrender.com/api/user/get', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: String(userId), username: userName })
+                });
+                let result = await response.json();
+                if (response.ok && result.status === "success") {
+                    userLP = result.lp;
+                    displayedLP = userLP;
+                    streak = result.streak !== undefined ? result.streak : streak;
+                    setStorage('cyber_lp', userLP);
+                    setStorage('cyber_streak', streak);
+                    updateUI();
+                }
+            } catch (error) {
+                console.error("Не удалось загрузить баланс с сервера:", error);
+            }
+
+            checkAdminAccess(userId);
+        }
+
+        async function loadLeaders() {
+            const container = document.getElementById('leaders-list-container');
+            if (!container) return;
+            container.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 20px;">Загрузка рейтинга...</div>';
+            
+            try {
+                triggerSpiralAbsorption();
+                let response = await fetch('https://cyberpuls.onrender.com/api/leaders');
+                let result = await response.json();
+                
+                if (response.ok && result.status === "success" && result.leaders) {
+                    if (result.leaders.length === 0) {
+                        container.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 20px;">Пока нет участников в рейтинге.</div>';
+                        return;
+                    }
+                    
+                    let html = '';
+                    result.leaders.forEach((user, index) => {
+                        let rankNum = index + 1;
+                        let crown = rankNum === 1 ? '👑 ' : rankNum === 2 ? '🥈 ' : rankNum === 3 ? '🥉 ' : `#${rankNum} `;
+                        let name = user.username || ('Игрок ' + String(user.telegram_id).slice(-4));
+                        let lp = user.lp || 0;
+                        let lpVal = lp.toLocaleString();
+                        
+                        let rankName = "Бронза";
+                        if (lp >= 6000) rankName = "Завоеватель";
+                        else if (lp >= 4500) rankName = "Ас";
+                        else if (lp >= 3000) rankName = "Корона";
+                        else if (lp >= 2000) rankName = "Алмаз";
+                        else if (lp >= 1200) rankName = "Платина";
+                        else if (lp >= 700) rankName = "Золото";
+                        else if (lp >= 300) rankName = "Серебро";
+
+                        html += `
+                            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(16, 26, 56, 0.85); border: 1px solid rgba(0, 242, 254, 0.3); border-radius: 16px; padding: 14px 18px; backdrop-filter: blur(10px);">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <span style="font-weight: 800; font-size: 16px; color: #00f2fe; min-width: 32px;">${crown}</span>
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 14px; color: #fff; text-shadow: 0 0 8px rgba(0,242,254,0.3);">${escapeHtml(name)}</div>
+                                        <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Ранг: ${rankName}</div>
+                                    </div>
+                                </div>
+                                <div style="font-weight: 800; font-size: 15px; color: #00f2fe; text-shadow: 0 0 10px rgba(0,242,254,0.5);">⚡ ${lpVal} LP</div>
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div style="text-align: center; color: #f43f5e; padding: 20px;">Ошибка загрузки рейтинга</div>';
+                }
+            } catch (err) {
+                container.innerHTML = '<div style="text-align: center; color: #f43f5e; padding: 20px;">Ошибка соединения с сервером</div>';
+            }
+        }
+
+        async function loadAllUsersForAdmin() {
+            triggerVibrate();
+            const container = document.getElementById('admin-users-list-container');
+            container.innerHTML = '<div style="font-size: 12px; color: #94a3b8; text-align: center; padding: 10px;">Загрузка базы данных...</div>';
+
+            let adminId = MASTER_ADMIN_ID;
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+                adminId = window.Telegram.WebApp.initDataUnsafe.user.id;
+            } else if (currentUserId) {
+                adminId = currentUserId;
+            }
+
+            try {
+                triggerSpiralAbsorption();
+                let response = await fetch(`https://cyberpuls.onrender.com/api/admin/users?admin_id=${adminId}`);
+                let result = await response.json();
+                
+                if (response.ok && result.status === "success" && (result.users || result.leaders)) {
+                    let userList = result.users || result.leaders;
+                    
+                    if (userList.length === 0) {
+                        container.innerHTML = '<div style="font-size: 12px; color: #94a3b8; text-align: center; padding: 10px;">Список участников пуст.</div>';
+                        return;
+                    }
+
+                    let html = '';
+                    userList.forEach((user) => {
+                        let uid = user.telegram_id;
+                        let name = user.username || ('Игрок ' + String(uid).slice(-4));
+                        let lp = user.lp || 0;
+                        let streakVal = user.streak || 0;
+                        let safeName = escapeHtml(name);
+
+                        html += `
+                            <div class="admin-user-item" onclick="openAdminUserProfile('${uid}', '${safeName}', ${lp}, ${streakVal})">
+                                <div class="admin-user-info">
+                                    <span class="admin-user-name">${safeName}</span>
+                                    <span class="admin-user-sub">ID: ${uid}</span>
+                                </div>
+                                <div class="admin-user-lp">⚡ ${lp.toLocaleString()} LP</div>
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div style="font-size: 12px; color: #f43f5e; text-align: center; padding: 10px;">Ошибка доступа или загрузки.</div>';
+                }
+            } catch (err) {
+                container.innerHTML = '<div style="font-size: 12px; color: #f43f5e; text-align: center; padding: 10px;">Ошибка соединения с сервером.</div>';
+            }
+        }
+
+        // Переключение вкладок магазина
+        function switchShopTab(tabName, btnElement) {
+            triggerVibrate();
+            document.querySelectorAll('.shop-tab-pane').forEach(pane => pane.classList.remove('active'));
+            document.querySelectorAll('.shop-tab-btn').forEach(btn => btn.classList.remove('active'));
+
+            const targetPane = document.getElementById('shop-tab-' + tabName);
+            if (targetPane) targetPane.classList.add('active');
+            if (btnElement) btnElement.classList.add('active');
+        }
+
+        // ПЛАВНОЕ ПЕРЕКЛЮЧЕНИЕ И ЖЕСТЫ СВАЙПА МЕЖДУ РАЗДЕЛАМИ
+        const tabsOrder = ['main', 'sessions', 'tournaments', 'leaders'];
+
+        function switchTab(tabId, btnElement) {
+            triggerVibrate();
+            document.querySelectorAll('.view-section').forEach(section => section.classList.remove('active'));
+            const targetSection = document.getElementById('view-' + tabId);
+            if (targetSection) targetSection.classList.add('active');
+
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            if (btnElement) btnElement.classList.add('active');
+
+            if (tabId === 'leaders') {
+                loadLeaders();
+            }
+        }
+
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        const mainContentArea = document.getElementById('mainContentArea');
+
+        if (mainContentArea) {
+            mainContentArea.addEventListener('touchstart', e => {
+                touchStartX = e.changedTouches[0].screenX;
+                touchStartY = e.changedTouches[0].screenY;
+            }, {passive: true});
+
+            mainContentArea.addEventListener('touchend', e => {
+                touchEndX = e.changedTouches[0].screenX;
+                let touchEndY = e.changedTouches[0].screenY;
+                
+                let diffX = touchEndX - touchStartX;
+                let diffY = Math.abs(touchEndY - touchStartY);
+
+                if (Math.abs(diffX) > 50 && diffY < 60) {
+                    if (diffX < 0) {
+                        navigateTab(1);  // Свайп влево
+                    } else {
+                        navigateTab(-1); // Свайп вправо
+                    }
+                }
+            }, {passive: true});
+        }
+
+        function navigateTab(direction) {
+            let currentActive = document.querySelector('.view-section.active');
+            let currentId = currentActive ? currentActive.id.replace('view-', '') : 'main';
+            let currentIndex = tabsOrder.indexOf(currentId);
+            
+            let newIndex = currentIndex + direction;
+            if (newIndex >= 0 && newIndex < tabsOrder.length) {
+                let targetTab = tabsOrder[newIndex];
+                let targetBtn = document.querySelectorAll('.nav-item')[newIndex];
+                switchTab(targetTab, targetBtn);
+            }
+        }
+
+        function openAdminUserProfile(userId, username, lp, streak) {
+            triggerVibrate();
+            selectedAdminTargetId = userId;
+
+            document.getElementById('admin-modal-username').textContent = username;
+            document.getElementById('admin-modal-userid').textContent = 'ID: ' + userId;
+            document.getElementById('admin-modal-lp').textContent = lp.toLocaleString();
+            document.getElementById('admin-modal-streak').textContent = streak + ' дн.';
+            
+            let rankName = "Бронза";
+            if (lp >= 6000) rankName = "Завоеватель";
+            else if (lp >= 4500) rankName = "Ас";
+            else if (lp >= 3000) rankName = "Корона";
+            else if (lp >= 2000) rankName = "Алмаз";
+            else if (lp >= 1200) rankName = "Платина";
+            else if (lp >= 700) rankName = "Золото";
+            else if (lp >= 300) rankName = "Серебро";
+            
+            document.getElementById('admin-modal-rank').textContent = rankName;
+            document.getElementById('admin-user-profile-modal').classList.add('active');
+        }
+
+        function closeAdminUserProfile() {
+            triggerVibrate();
+            document.getElementById('admin-user-profile-modal').classList.remove('active');
+        }
+
+        function closeAdminUserProfileOnOverlay(event) {
+            if (event.target.id === 'admin-user-profile-modal') {
+                closeAdminUserProfile();
+            }
+        }
+
+        function quickFillAdminInput() {
+            triggerVibrate();
+            const inputField = document.getElementById('admin-user-id');
+            if (inputField && selectedAdminTargetId) {
+                inputField.value = selectedAdminTargetId;
+                closeAdminUserProfile();
+                showAlert(`ID ${selectedAdminTargetId} подставлен в форму модерации!`);
+            }
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function renderAdminsList() {
+            let listEl = document.getElementById('admins-list');
+            if (!listEl) return;
+            let admins = getExtraAdmins();
+            if (admins.length === 0) {
+                listEl.innerHTML = 'Дополнительные админы не добавлены через интерфейс.';
+                return;
+            }
+            let html = 'Активные ID: <br>';
+            html += admins.map(id => `<span style="display:inline-block; margin-top:4px; background:rgba(0,0,0,0.4); padding:2px 8px; border-radius:6px; border:1px solid rgba(244,63,94,0.3);">${id} <span style="color:#f43f5e; cursor:pointer; margin-left:8px; font-weight:bold;" onclick="removeAdminId(${id})">[✕]</span></span>`).join(' ');
+            listEl.innerHTML = html;
+        }
+
+        function addAdminId() {
+            let input = document.getElementById('admin-new-id');
+            let newId = parseInt(input.value.trim());
+            if (!newId || isNaN(newId)) return showAlert("Введите корректный Telegram ID!");
+            let admins = getExtraAdmins();
+            if (admins.includes(newId) || newId === MASTER_ADMIN_ID || DEFAULT_ADMINS.includes(newId)) return showAlert("Этот ID уже имеет доступ!");
+            
+            admins.push(newId);
+            saveExtraAdmins(admins);
+            input.value = '';
+            renderAdminsList();
+            showAlert(`Админ с ID ${newId} успешно добавлен!`);
+        }
+
+        function removeAdminByIdInput() {
+            let input = document.getElementById('admin-remove-id');
+            let idToRemove = parseInt(input.value.trim());
+            
+            if (!idToRemove || isNaN(idToRemove)) return showAlert("Введите корректный Telegram ID для удаления!");
+            if (idToRemove === MASTER_ADMIN_ID) return showAlert("Ошибка: Нельзя удалить Мастер-админа (Root)!");
+
+            let admins = getExtraAdmins();
+            if (!admins.includes(idToRemove)) return showAlert("Этого ID нет в списке дополнительных админов!");
+
+            admins = admins.filter(id => id !== idToRemove);
+            saveExtraAdmins(admins);
+            input.value = '';
+            renderAdminsList();
+            showAlert(`Админ с ID ${idToRemove} успешно удален.`);
+        }
+
+        function removeAdminId(idToRemove) {
+            let admins = getExtraAdmins();
+            admins = admins.filter(id => id !== idToRemove);
+            saveExtraAdmins(admins);
+            renderAdminsList();
+            showAlert(`Админ с ID ${idToRemove} удален.`);
+        }
+
+        function openAdminPanelFromProfile() {
+            closeProfile();
+            setTimeout(() => {
+                triggerVibrate();
+                document.getElementById('view-admin').classList.add('active');
+                renderAdminsList(); 
+            }, 300);
+        }
+
+        function exitAdmin() {
+            triggerVibrate();
+            document.getElementById('view-admin').classList.remove('active');
+        }
+
+        async function adminAction(actionType) {
+            triggerVibrate();
+            if (actionType === 'give_lp') {
+                let uid = document.getElementById('admin-user-id').value.trim();
+                let amt = parseInt(document.getElementById('admin-lp-amount').value);
+                
+                if (!uid || isNaN(amt)) return showAlert("Введите корректный ID игрока и сумму LP!");
+
+                let adminId = MASTER_ADMIN_ID;
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+                    adminId = window.Telegram.WebApp.initDataUnsafe.user.id;
+                }
+
+                try {
+                    let response = await fetch('https://cyberpuls.onrender.com/api/admin/give-lp', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            admin_id: String(adminId), 
+                            target_user_id: uid, 
+                            amount: amt 
+                        })
+                    });
+
+                    let result = await response.json();
+                    if (response.ok) {
+                        showAlert(`Успешно! Игроку ${uid} начислено/изменено LP: ${amt}.`);
+                        
+                        if (String(uid) === String(currentUserId)) {
+                            userLP += amt;
+                            displayedLP = userLP;
+                            setStorage('cyber_lp', userLP);
+                            updateUI();
+                        }
+
+                        document.getElementById('admin-user-id').value = '';
+                        document.getElementById('admin-lp-amount').value = '';
+                    } else {
+                        showAlert(`Ошибка: ${result.detail || 'Не удалось выполнить действие'}`);
+                    }
+                } catch (error) {
+                    showAlert("Ошибка соединения с сервером.");
+                }
+            } 
+            else if (actionType === 'ban') {
+                let uid = document.getElementById('admin-user-id').value;
+                if(!uid) return showAlert("Укажите ID игрока для блокировки!");
+                showAlert(`Игрок ${uid} навсегда заблокирован в системе.`);
+            }
+            else if (actionType === 'create_promo') {
+                let code = document.getElementById('admin-promo-name').value;
+                let val = document.getElementById('admin-promo-val').value;
+                if(!code || !val) return showAlert("Укажите код и награду.");
+                showAlert(`Промокод ${code} на ${val} LP успешно создан!`);
+            }
+            else if (actionType === 'maintenance') {
+                let isChecked = document.getElementById('admin-maintenance').checked;
+                showAlert(isChecked ? "Технические работы ВКЛЮЧЕНЫ." : "Технические работы ВЫКЛЮЧЕНЫ.");
+            }
+            else if (actionType === 'send_alert') {
+                let msg = document.getElementById('admin-alert-msg').value;
+                if(!msg) return showAlert("Введите текст уведомления!");
+                showAlert(`Global Alert отправлен всем:\n"${msg}"`);
+            }
+        }
+
+        function checkDailyStatus() {
+            let today = new Date().toDateString();
+            if (lastClaimDate === today && dailyContainer) {
+                dailyContainer.classList.add('hidden');
+                dailyContainer.style.display = 'none';
+            }
+        }
+
+        async function claimDailyReward() {
+            let today = new Date().toDateString();
+            if (lastClaimDate === today) return;
+
+            triggerVibrate(); 
+            if (dailyContainer) {
+                dailyContainer.classList.add('epic-claiming');
+            }
+
+            let userId = MASTER_ADMIN_ID;
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+                userId = window.Telegram.WebApp.initDataUnsafe.user.id;
+            }
+
+            try {
+                let response = await fetch('https://cyberpuls.onrender.com/api/user/claim', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: String(userId) })
+                });
+                let result = await response.json();
+                if (response.ok && result.status === "success") {
+                    userLP = result.lp;
+                    streak = result.streak;
+                } else {
+                    userLP += 100;
+                    streak += 1;
+                }
+            } catch (err) {
+                userLP += 100;
+                streak += 1;
+            }
+
+            lastClaimDate = today;
+            setStorage('cyber_lp', userLP);
+            setStorage('cyber_streak', streak);
+            setStorage('cyber_last_claim', lastClaimDate);
+
+            setTimeout(() => {
+                if (dailyContainer) {
+                    dailyContainer.classList.add('hidden');
+                    dailyContainer.style.display = 'none';
+                }
+                updateUI();
+            }, 400);
+        }
+
+        function openProfile() { triggerVibrate(); document.getElementById('profile-modal').classList.add('active'); }
+        function closeProfile() { triggerVibrate(); document.getElementById('profile-modal').classList.remove('active'); }
+        function closeProfileOnOverlay(event) { if (event.target.id === 'profile-modal') closeProfile(); }
+
+        function updateUI() {
+            animateLPChange(userLP);
+            streakText.textContent = streak + ' дн.';
+
+            let rankName = "Бронза"; let currentTierMin = 0; let nextTierMin = 300; let progressPercent = 0;
+
+            if (userLP >= 6000) { rankName = "Завоеватель"; currentTierMin = 6000; nextTierMin = 6000; progressPercent = 100; }
+            else if (userLP >= 4500) { rankName = "Ас"; currentTierMin = 4500; nextTierMin = 6000; }
+            else if (userLP >= 3000) { rankName = "Корона"; currentTierMin = 3000; nextTierMin = 4500; }
+            else if (userLP >= 2000) { rankName = "Алмаз"; currentTierMin = 2000; nextTierMin = 3000; }
+            else if (userLP >= 1200) { rankName = "Платина"; currentTierMin = 1200; nextTierMin = 2000; }
+            else if (userLP >= 700) { rankName = "Золото"; currentTierMin = 700; nextTierMin = 1200; }
+            else if (userLP >= 300) { rankName = "Серебро"; currentTierMin = 300; nextTierMin = 700; }
+            else { rankName = "Бронза"; currentTierMin = 0; nextTierMin = 300; }
+
+            if (userLP < 6000) progressPercent = ((userLP - currentTierMin) / (nextTierMin - currentTierMin)) * 100;
+
+            rankText.textContent = rankName;
+            let displayPercent = Math.floor(Math.min(Math.max(progressPercent, 0), 100));
+            progressPercentText.textContent = displayPercent + '%';
+            
+            let visualWidth = Math.min(Math.max(progressPercent, userLP > 0 ? 4 : 0), 100);
+            progressFill.style.width = visualWidth + '%';
+            
+            document.getElementById('profile-lp').textContent = userLP.toLocaleString();
+            document.getElementById('profile-streak').textContent = streak + ' дн.';
+            document.getElementById('profile-rank').textContent = rankName;
+        }
+
+        async function syncBalance() {
+            if (!currentUserId) return;
+            try {
+                let response = await fetch('https://cyberpuls.onrender.com/api/user/get', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: String(currentUserId), username: currentUserName })
+                });
+                let result = await response.json();
+                if (response.ok && result.status === "success") {
+                    if (userLP !== result.lp) {
+                        userLP = result.lp;
+                        setStorage('cyber_lp', userLP);
+                        updateUI();
+                    }
+                }
+            } catch (error) {
+                console.error("Ошибка синхронизации:", error);
+            }
+        }
+
+        setInterval(syncBalance, 5000);
+
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+                syncBalance();
+            }
+        });
+
+        const lpInfoBtn = document.getElementById('lpInfoBtn');
+        const lpInfoModal = document.getElementById('lpInfoModal');
+        const closeInfoBtn = document.getElementById('closeInfoBtn');
+
+        if(lpInfoBtn && lpInfoModal && closeInfoBtn) {
+            lpInfoBtn.addEventListener('click', () => {
+                triggerVibrate();
+                lpInfoModal.classList.add('active');
+            });
+            closeInfoBtn.addEventListener('click', () => {
+                triggerVibrate();
+                lpInfoModal.classList.remove('active');
+            });
+            window.addEventListener('click', (e) => {
+                if (e.target === lpInfoModal) {
+                    triggerVibrate();
+                    lpInfoModal.classList.remove('active');
+                }
+            });
+        }
+
+        function startSeasonTimer() {
+            function updateTimer() {
+                const now = new Date();
+                const resetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+                const timeDiff = resetDate - now;
+
+                if (timeDiff <= 0) {
+                    document.getElementById('timer-days').innerText = '00';
+                    document.getElementById('timer-hours').innerText = '00';
+                    document.getElementById('timer-minutes').innerText = '00';
+                    document.getElementById('timer-seconds').innerText = '00';
+                    return;
+                }
+
+                const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeDiff / (1000 * 60 * 60)) % 24);
+                const minutes = Math.floor((timeDiff / 1000 / 60) % 60);
+                const seconds = Math.floor((timeDiff / 1000) % 60);
+
+                const format = (num) => num.toString().padStart(2, '0');
+
+                document.getElementById('timer-days').innerText = format(days);
+                document.getElementById('timer-hours').innerText = format(hours);
+                document.getElementById('timer-minutes').innerText = format(minutes);
+                document.getElementById('timer-seconds').innerText = format(seconds);
+            }
+
+            updateTimer();
+            setInterval(updateTimer, 1000);
+        }
+        
+        startSeasonTimer();
+
+        initUserData();
+        checkDailyStatus();
+        updateUI();
+    </script>
+</body>
+</html>
