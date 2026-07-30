@@ -6,27 +6,26 @@ from supabase import create_client, Client
 
 app = FastAPI()
 
-# Включаем CORS, чтобы фронтенд мог стучаться на бэкенд
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Разрешаем запросы с любых источников
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Читаем переменные окружения из Render
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-ADMIN_ID = os.getenv("ADMIN_ID")
 
-# Инициализация клиента Supabase
+# Список разрешенных Telegram ID администраторов
+ALLOWED_ADMINS = [8976502503, 8493889843]
+
 supabase: Client = None
 if SUPABASE_URL and SUPABASE_KEY:
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 class AdminRequest(BaseModel):
-    user_id: str  # ID администратора
+    user_id: str
 
 class GiveLpRequest(BaseModel):
     admin_id: str
@@ -39,21 +38,31 @@ def read_root():
 
 @app.post("/api/admin/check")
 def check_admin(data: AdminRequest):
-    if not ADMIN_ID or str(data.user_id) != str(ADMIN_ID):
+    try:
+        user_id_int = int(data.user_id)
+    except ValueError:
         raise HTTPException(status_code=403, detail="Доступ запрещен")
+
+    if user_id_int not in ALLOWED_ADMINS:
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+        
     return {"status": "ok", "message": "Добро пожаловать в админку!"}
 
 @app.post("/api/admin/give-lp")
 def give_lp(data: GiveLpRequest):
-    # Проверка прав администратора на бэкенде
-    if not ADMIN_ID or str(data.admin_id) != str(ADMIN_ID):
+    try:
+        admin_id_int = int(data.admin_id)
+    except ValueError:
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+
+    # Проверяем, входит ли отправитель в список администраторов
+    if admin_id_int not in ALLOWED_ADMINS:
         raise HTTPException(status_code=403, detail="Доступ запрещен")
     
     if not supabase:
         raise HTTPException(status_code=500, detail="База данных не подключена")
 
     try:
-        # Проверяем наличие пользователя в таблице 'users' (поля: telegram_id, lp)
         response = supabase.table("users").select("lp").eq("telegram_id", data.target_user_id).execute()
         
         if response.data and len(response.data) > 0:
