@@ -1,9 +1,19 @@
 import os
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
 
 app = FastAPI()
+
+# Включаем CORS, чтобы фронтенд мог стучаться на бэкенд
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Разрешаем запросы с любых источников
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Читаем переменные окружения из Render
 SUPABASE_URL = os.getenv("SUPABASE_URL")
