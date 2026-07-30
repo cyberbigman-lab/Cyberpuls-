@@ -17,8 +17,7 @@ app.add_middleware(
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-# ВНИМАНИЕ: Добавьте сюда свой Telegram ID через запятую!
-ALLOWED_ADMINS = [8976502503, 8493889843]
+ALLOWED_ADMINS = [8493889843, 8976502503]
 
 supabase: Client = None
 if SUPABASE_URL and SUPABASE_KEY:
@@ -177,4 +176,4 @@ def get_leaders():
             return {"status": "success", "leaders": leaders}
         except Exception as inner_e:
             raise HTTPException(status_code=500, detail=str(inner_e))
-                                                              
+                            
