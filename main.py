@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client, Client
@@ -50,6 +50,40 @@ def check_admin(data: AdminRequest):
         raise HTTPException(status_code=403, detail="Доступ запрещен")
         
     return {"status": "ok", "message": "Добро пожаловать в админку!"}
+
+# НОВЫЙ ЭНДПОИНТ: Получение списка ВСЕХ пользователей для администратора
+@app.get("/api/admin/users")
+def get_all_users_admin(admin_id: str = Query(...)):
+    try:
+        admin_id_int = int(admin_id)
+    except ValueError:
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+
+    if admin_id_int not in ALLOWED_ADMINS:
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+
+    if not supabase:
+        raise HTTPException(status_code=500, detail="База данных не подключена")
+
+    try:
+        # Достаем всех пользователей из таблицы, сортируя по LP от большего к меньшему
+        response = supabase.table("users").select("telegram_id, username, lp").order("lp", desc=True).execute()
+        
+        users_data = response.data if response.data else []
+        
+        # На случай если в таблице еще нет поля streak, проставляем дефолтное значение 0, чтобы фронтенд не ломался
+        formatted_users = []
+        for u in users_data:
+            formatted_users.append({
+                "telegram_id": u.get("telegram_id"),
+                "username": u.get("username") or f"Игрок {str(u.get('telegram_id'))[-4:]}",
+                "lp": u.get("lp", 0),
+                "streak": u.get("streak", 0)
+            })
+
+        return {"status": "success", "users": formatted_users}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/admin/give-lp")
 def give_lp(data: GiveLpRequest):
@@ -115,4 +149,4 @@ def get_leaders():
             return {"status": "success", "leaders": leaders}
         except Exception as inner_e:
             raise HTTPException(status_code=500, detail=str(inner_e))
-            
+                                                           
