@@ -6,6 +6,7 @@ from supabase import create_client, Client
 
 app = FastAPI()
 
+# Включаем CORS для связи с фронтендом
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -32,6 +33,9 @@ class GiveLpRequest(BaseModel):
     target_user_id: str
     amount: int
 
+class UserGetRequest(BaseModel):
+    user_id: str
+
 @app.get("/")
 def read_root():
     return {"status": "online", "project": "CyberPuls Blitz Tracker"}
@@ -55,7 +59,6 @@ def give_lp(data: GiveLpRequest):
     except ValueError:
         raise HTTPException(status_code=403, detail="Доступ запрещен")
 
-    # Проверяем, входит ли отправитель в список администраторов
     if admin_id_int not in ALLOWED_ADMINS:
         raise HTTPException(status_code=403, detail="Доступ запрещен")
     
@@ -73,6 +76,20 @@ def give_lp(data: GiveLpRequest):
             supabase.table("users").insert({"telegram_id": data.target_user_id, "lp": data.amount}).execute()
             
         return {"status": "success", "message": f"Успешно изменено на {data.amount} LP"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/user/get")
+def get_user(data: UserGetRequest):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="База данных не подключена")
+    try:
+        response = supabase.table("users").select("lp").eq("telegram_id", data.user_id).execute()
+        if response.data and len(response.data) > 0:
+            return {"status": "success", "lp": response.data[0].get("lp", 0)}
+        else:
+            supabase.table("users").insert({"telegram_id": data.user_id, "lp": 0}).execute()
+            return {"status": "success", "lp": 0}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
         
