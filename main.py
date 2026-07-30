@@ -1,43 +1,32 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 import os
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from supabase import create_client, Client
 
-app = FastAPI(title="CyberPuls API", version="1.0.0")
+app = FastAPI()
 
-# Настройка CORS, чтобы Telegram Mini App мог свободно стучаться на сервер
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Читаем переменные окружения из Render
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+ADMIN_ID = os.getenv("ADMIN_ID")
 
-# Модель данных для выдачи LP через админку
-class AdminActionRequest(BaseModel):
-    admin_id: int
-    target_user_id: int
-    amount: int
+# Инициализация клиента Supabase
+supabase: Client = None
+if SUPABASE_URL and SUPABASE_KEY:
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Список постоянных администраторов (можно вынести в переменные окружения)
-DEFAULT_ADMINS = [8976502503]
+class AdminRequest(BaseModel):
+    user_id: str  # ID пользователя, который пытается зайти в админку
 
 @app.get("/")
 def read_root():
     return {"status": "online", "project": "CyberPuls Blitz Tracker"}
 
-# Эндпоинт проверки прав администратора
-@app.get("/api/check-admin/{user_id}")
-def check_admin(user_id: int):
-    is_admin = user_id in DEFAULT_ADMINS
-    return {"user_id": user_id, "is_admin": is_admin}
-
-# Эндпоинт для начисления LP (пример логики для админки)
-@app.post("/api/admin/give-lp")
-def give_lp(data: AdminActionRequest):
-    if data.admin_id not in DEFAULT_ADMINS:
-        raise HTTPException(status_code=403, detail="Access denied: Root access required")
+@app.post("/api/admin/check")
+def check_admin(data: AdminRequest):
+    # Сравниваем прилетевший ID с тем, что записан на Render
+    if not ADMIN_ID or str(data.user_id) != str(ADMIN_ID):
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
     
-    # Здесь в будущем будет запрос к базе Supabase для обновления баланса игрока
-    return {"success": True, "message": f"Successfully updated LP for user {data.target_user_id}"}
+    return {"status": "ok", "message": "Добро пожаловать в админку!"}
+    
