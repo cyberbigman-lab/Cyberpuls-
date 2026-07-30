@@ -15,7 +15,7 @@ app.add_middleware(
 )
 
 # Модель данных для выдачи LP через админку
-class AdminActionRequest(BaseModel.py
+class AdminActionRequest(BaseModel):
     admin_id: int
     target_user_id: int
     amount: int
