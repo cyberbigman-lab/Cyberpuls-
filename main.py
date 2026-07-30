@@ -54,7 +54,7 @@ def check_admin(data: AdminRequest):
         
     return {"status": "ok", "message": "Добро пожаловать в админку!"}
 
-# ЭНДПОИНТ: Получение списка ВСЕХ пользователей для администратора
+# ИСПРАВЛЕННЫЙ ЭНДПОИНТ: Получение списка ВСЕХ пользователей для администратора
 @app.get("/api/admin/users")
 def get_all_users_admin(admin_id: str = Query(...)):
     try:
@@ -178,4 +178,4 @@ def get_leaders():
             return {"status": "success", "leaders": leaders}
         except Exception as inner_e:
             raise HTTPException(status_code=500, detail=str(inner_e))
-                    
+                                                          
