@@ -17,6 +17,7 @@ app.add_middleware(
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
+# ВНИМАНИЕ: Добавьте сюда свой Telegram ID через запятую!
 ALLOWED_ADMINS = [8976502503, 8493889843]
 
 supabase: Client = None
@@ -54,7 +55,6 @@ def check_admin(data: AdminRequest):
         
     return {"status": "ok", "message": "Добро пожаловать в админку!"}
 
-# ИСПРАВЛЕННЫЙ ЭНДПОИНТ: Получение списка ВСЕХ пользователей для администратора
 @app.get("/api/admin/users")
 def get_all_users_admin(admin_id: str = Query(...)):
     try:
@@ -144,7 +144,6 @@ def get_user(data: UserGetRequest):
         except Exception as inner_e:
             raise HTTPException(status_code=500, detail=str(inner_e))
 
-# ЭНДПОИНТ: Получение ежедневной награды
 @app.post("/api/user/claim")
 def claim_daily(data: ClaimRewardRequest):
     if not supabase:
@@ -178,4 +177,4 @@ def get_leaders():
             return {"status": "success", "leaders": leaders}
         except Exception as inner_e:
             raise HTTPException(status_code=500, detail=str(inner_e))
-                                                          
+                                                              
